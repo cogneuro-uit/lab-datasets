@@ -1,0 +1,17 @@
+# Fictional example – not a real dataset.
+id: 2023-tms-rsg
+title: TMS over DLPFC and random sequence generation
+status: analysing
+summary: Sham-controlled TMS study on how prefrontal stimulation changes mind-wandering during random sequence generation.
+contact: matthias
+collected: {start: 2023-01, end: 2023-06}
+content:
+  modalities: [tms, behaviour, questionnaire]
+  n_participants: 60
+  paradigm: finger-tapping random sequence generation
+  tags: [mind-wandering, tms]
+legal:
+  sharing: open
+locations:
+  - kind: osf
+    url: https://osf.io/xyz98/

@@ -1,0 +1,37 @@
+# Fictional example (from PLAN.md) – not a real dataset.
+id: 2019-eeg-attention
+title: Sustained attention and mind-wandering, EEG + pupil
+status: published
+summary: >
+  64-channel EEG and pupillometry during a finger-tapping SART-like task with
+  thought probes every 30–60 seconds.
+contact: matthias
+contributors: [matthias]
+collected: {start: 2019-02, end: 2019-11}
+content:
+  modalities: [eeg, eye-tracking, behaviour]
+  n_participants: 42
+  population: healthy adults 18–35
+  paradigm: finger-tapping random sequence generation
+  tags: [mind-wandering, attention]
+legal:
+  ethics_ref: "REK 2018/1234"
+  data_protection_ref: "Sikt 123456"
+  consent_scope: "reuse within research on attention; no sharing of raw data outside EU"
+  sharing: on-request
+  delete_by: 2034-12-31
+locations:
+  - kind: teams
+    url: "https://uitno.sharepoint.com/sites/lab/Shared%20Documents/2019-eeg-attention"
+    note: raw + BIDS
+    is_backup: true
+  - kind: server
+    path: /data/projects/2019-eeg-attention
+  - kind: osf
+    url: https://osf.io/abc12/
+    note: preprocessed, public
+outputs:
+  code:
+    - url: https://github.com/example/eeg-attention-analysis
+notes: |
+  Subjects 7 and 31 have noisy EEG in block 3.

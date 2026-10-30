@@ -1,0 +1,8 @@
+# Fictional example – not a real dataset.
+id: 2026-resting-pupil
+title: Resting-state pupil fluctuations (pilot)
+status: collecting
+contact: matthias
+content:
+  modalities: [eye-tracking]
+  tags: [pilot, resting-state]
