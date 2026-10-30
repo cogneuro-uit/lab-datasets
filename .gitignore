@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# The catalog itself is its own git repo (see README)
+/data/

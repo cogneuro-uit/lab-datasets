@@ -1,0 +1,33 @@
+[project]
+name = "labcat"
+version = "0.1.0"
+description = "Lab dataset catalog: browse, search and edit dataset metadata stored as YAML in git"
+authors = [
+    { name = "Matthias Mittner", email = "matthias.mittner@uit.no" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.162.0",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "markdown-it-py>=4.2.0",
+    "pydantic>=2.14.2",
+    "python-multipart>=0.0.32",
+    "ruamel-yaml>=0.19.1",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.15,<0.12.0"]
+build-backend = "uv_build"
+
+[project.scripts]
+labcat = "labcat.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
