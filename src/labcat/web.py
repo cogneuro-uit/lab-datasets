@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
 from markupsafe import Markup
 
-from . import completeness, doi, forms, yamlio
+from . import completeness, doi, forms, skill, yamlio
 from .config import Settings, load_settings
 from .gitrepo import GitRepo
 from .models import ID_PATTERN, LOCATION_KINDS, SHARING, STATUSES, Dataset, Person
@@ -384,6 +384,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if id in cat.datasets:
             return {"ok": False, "message": "This ID is already taken."}
         return {"ok": True, "message": "Available"}
+
+    @app.get("/skill/lab-dataset-yaml.zip")
+    def skill_zip(request: Request):
+        return Response(
+            skill.build_zip(cat, str(request.base_url)),
+            media_type="application/zip",
+            headers={"Content-Disposition": 'attachment; filename="lab-dataset-yaml.zip"'},
+        )
 
     @app.get("/export.csv")
     def export_csv():

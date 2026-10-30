@@ -35,6 +35,11 @@ To keep it running in the background, see [deploy/labcat.service](deploy/labcat.
 - **Quick placeholder:** title + contact, fill in the rest later.
 - **Import YAML:** upload or paste; it is checked before saving. See `examples/`
   (fictional datasets) for the format.
+- **With an AI assistant:** "Download skill" on the *Add a dataset* page gives a zip
+  (`lab-dataset-yaml`) for Claude or other agents. It interviews the user, writes the YAML
+  and checks it with a bundled validator. It's built on request with the current people
+  (names and Slack handles only), tags, modalities and dataset IDs. The source is in
+  `src/labcat/skill/`.
 
 ## Development
 

@@ -533,6 +533,12 @@ details.tip.card { background: var(--surface); margin-top: 16px; }
 .form-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 #import-result .banner { margin: 0; }
 
+/* AI skill download */
+.skill-box { display: flex; flex-wrap: wrap; gap: 14px 16px; align-items: center; max-width: 960px; margin: 28px auto 0; padding: 16px 18px;
+             border: 1px dashed var(--border-strong); border-radius: 14px; background: var(--surface); }
+.skill-box > div { flex: 1 1 320px; }
+.skill-box p { margin: 4px 0 0; }
+
 /* history */
 .timeline { list-style: none; padding: 0; margin: 0; position: relative; }
 .timeline::before { content: ""; position: absolute; left: 12px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
