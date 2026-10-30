@@ -194,3 +194,21 @@ class Person(Model):
 class Modality(Model):
     id: Annotated[str, Field(pattern=PERSON_ID_PATTERN)]
     label: str
+
+
+class Site(BaseModel):
+    """Who the catalog belongs to (site.yaml in the data repo). All optional."""
+
+    model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)
+    name: str = "Our lab"
+    short_name: str | None = None
+    catalog_title: str = "Lab datasets"
+    department: OptStr = None
+    institution: OptStr = None
+    city: OptStr = None
+    website: OptStr = None
+    contact: OptStr = None
+    logo: OptStr = None
+    favicon: OptStr = None
+    about: OptStr = None
+    methods: list[str] = []

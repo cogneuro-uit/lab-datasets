@@ -3,17 +3,24 @@
 {% block content %}
 {% if not index %}
 <section class="empty-hero">
-  <div class="empty-illustration">{{ icon("database") }}</div>
-  <h1>Welcome to the lab dataset catalog</h1>
-  <p class="lead">One place that lists every dataset the lab has collected, where it is stored, and which papers and code belong to it.
+  {% if cat.site.logo %}<img class="hero-logo" src="/brand/logo" alt="{{ cat.site.name }} logo" width="120" height="120">
+  {% else %}<div class="empty-illustration">{{ icon("database") }}</div>{% endif %}
+  <p class="eyebrow">{{ cat.site.name }}</p>
+  <h1>Welcome to our dataset catalog</h1>
+  <p class="lead">One place that lists every dataset the group has collected, where it is stored, and which papers and code belong to it.
      There is nothing here yet. Add the first dataset:</p>
   {% include "_new_options.html" %}
 </section>
 {% else %}
 <section class="hero">
-  <div>
-    <h1>Lab datasets</h1>
-    <p class="lead">{{ index|length }} dataset{{ "s" if index|length != 1 }}. Search by title, topic, method, people or tags.</p>
+  <div class="hero-text">
+    {% if cat.site.logo %}<img class="hero-logo-sm" src="/brand/logo" alt="" width="72" height="72">{% endif %}
+    <div>
+      <p class="eyebrow">{{ cat.site.name }}</p>
+      <h1>Datasets</h1>
+      <p class="lead">{{ index|length }} dataset{{ "s" if index|length != 1 }} collected by the group. Search by title, topic, method, people or tags.
+        <a href="/about">About this catalog</a></p>
+    </div>
   </div>
   <label class="search" for="q">
     {{ icon("search") }}

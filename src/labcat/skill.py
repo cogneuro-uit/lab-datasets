@@ -22,7 +22,9 @@ def build_zip(cat, catalog_url: str) -> bytes:
         if f.is_file() and "__pycache__" not in f.parts:
             files[f.relative_to(SKILL_DIR).as_posix()] = f.read_text(encoding="utf-8")
     files["SKILL.md"] = Template(files["SKILL.md"]).safe_substitute(
-        catalog_url=catalog_url.rstrip("/"), generated=dt.date.today().isoformat()
+        catalog_url=catalog_url.rstrip("/"),
+        generated=dt.date.today().isoformat(),
+        lab_name=cat.site.name + (f" ({cat.site.institution})" if cat.site.institution else ""),
     )
     # Only what an agent needs: no emails or other contact details.
     people = [

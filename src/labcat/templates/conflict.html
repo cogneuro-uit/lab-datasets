@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon %}
-{% block title %}Edit conflict · Lab datasets{% endblock %}
+{% block title %}Edit conflict{% endblock %}
 {% macro show(v) -%}
 {%- if v is none -%}<span class="muted">empty</span>
 {%- elif v is sequence and v is not string -%}{% for x in v %}<div>{{ x if x is string else x|tojson }}</div>{% endfor %}

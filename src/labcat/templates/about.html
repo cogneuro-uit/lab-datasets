@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, status_badge, sharing_icon %}
+{% block title %}About{% endblock %}
+{% block content %}
+{% set site = cat.site %}
+<section class="about-hero">
+  {% if site.logo %}<img class="hero-logo" src="/brand/logo" alt="{{ site.name }} logo" width="132" height="132">{% endif %}
+  <div>
+    <p class="eyebrow">{{ [site.department, site.institution]|select|join(" · ") }}</p>
+    <h1>{{ site.name }}</h1>
+    {% if site.about %}<div class="lead prose">{{ site.about|markdown }}</div>{% endif %}
+    {% if site.methods %}
+    <div class="chips about-methods">{% for m in site.methods %}<span class="chip chip-mod">{{ m }}</span>{% endfor %}</div>
+    {% endif %}
+    {% if site.website %}<a class="btn" href="{{ site.website }}" target="_blank" rel="noopener">{{ icon("globe") }} Group website {{ icon("external-link") }}</a>{% endif %}
+  </div>
+</section>
+
+<div class="about-grid">
+  <section class="card">
+    <h2 class="card-title">{{ icon("database") }} What this catalog is</h2>
+    <p>A list of every dataset the group has collected: what it contains, who to ask, where the data and its backups are stored
+       (Teams, the lab server, OSF, …), the ethics approvals behind it, and the papers, preprints and code that belong to it.
+       It currently lists <strong>{{ n_datasets }}</strong> dataset{{ "s" if n_datasets != 1 }}.</p>
+    <ul class="check-list">
+      <li>{{ icon("check") }} <span><strong>Metadata and links only.</strong> The data itself stays where it is.</span></li>
+      <li>{{ icon("check") }} <span><strong>No personal data.</strong> Never enter participant names or other identifying information.</span></li>
+      <li>{{ icon("check") }} <span><strong>Everyone can edit.</strong> Every change is saved with who made it and can be undone from the dataset's history.</span></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">{{ icon("plus") }} Adding a dataset</h2>
+    <ol class="steps-list">
+      <li><a href="/new/wizard"><strong>Step by step</strong></a>: a guided form; only the first step is required.</li>
+      <li><a href="/new/quick"><strong>Quick placeholder</strong></a>: title and contact person now, details later.</li>
+      <li><a href="/new/import"><strong>Import a YAML file</strong></a>: for files written by hand or by an AI assistant.</li>
+    </ol>
+    <p class="small muted">Power users: <a href="/skill/lab-dataset-yaml.zip">download the AI skill</a> that lets Claude or
+       other agents interview you and write the file.</p>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">{{ icon("activity") }} Status of a dataset</h2>
+    <dl class="legend">
+      {% set help = {"planned": "Not started yet", "collecting": "Data collection is ongoing", "analysing": "Collected, being analysed",
+                     "published": "Results are published", "archived": "Finished and stored away", "retired": "Hidden from the catalog, kept with its history"} %}
+      {% for s, lab in STATUSES.items() %}<dt>{{ status_badge(s) }}</dt><dd>{{ help[s] }}</dd>{% endfor %}
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">{{ icon("scale") }} Sharing levels</h2>
+    <dl class="legend">
+      {% set help = {"open": "Anyone, e.g. publicly on OSF", "on-request": "Researchers who ask us",
+                     "internal": "Only people in the group", "restricted": "Special limits; check the consent and approvals"} %}
+      {% for s, lab in SHARING.items() %}<dt><span class="pill sharing-{{ s }}">{{ sharing_icon(s) }} {{ lab }}</span></dt><dd>{{ help[s] }}</dd>{% endfor %}
+    </dl>
+  </section>
+</div>
+
+{% set maint = cat.person(site.contact) %}
+{% if maint %}
+<p class="about-contact muted">{{ icon("circle-help") }} Questions about the catalog? Ask
+  <strong>{{ maint.name }}</strong>{% if maint.slack_handle %} (<span class="mono">@{{ maint.slack_handle }}</span> on Slack){% endif %}.</p>
+{% endif %}
+{% endblock %}

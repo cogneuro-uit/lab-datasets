@@ -12,7 +12,7 @@ from pydantic import ValidationError
 
 from . import diffing, yamlio
 from .gitrepo import Commit, GitRepo, blob_sha
-from .models import Dataset, Modality, Person
+from .models import Dataset, Modality, Person, Site
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ PEOPLE = "people.yaml"
 TAGS = "vocab/tags.yaml"
 MODALITIES = "vocab/modalities.yaml"
 SCHEMA = "schema/dataset.schema.json"
+SITE = "site.yaml"
 
 DEFAULT_MODALITIES = [
     ("eeg", "EEG"),
@@ -96,6 +97,7 @@ class Catalog:
         self.people: list[Person] = []
         self.tags: list[str] = []
         self.modalities: list[Modality] = []
+        self.site = Site()
         self._signature = None
 
     # --- loading ---------------------------------------------------------
@@ -108,6 +110,7 @@ class Catalog:
             self.root / PEOPLE,
             self.root / TAGS,
             self.root / MODALITIES,
+            self.root / SITE,
         ]
         return (self.git.head(), tuple((f.name, f.stat().st_mtime_ns) for f in files if f.exists()))
 
@@ -126,6 +129,11 @@ class Catalog:
             self.modalities = [
                 Modality.model_validate(m) for m in yamlio.plain(yamlio.load(self._read(MODALITIES) or "[]")) or []
             ]
+            try:
+                self.site = Site.model_validate(yamlio.plain(yamlio.load(self._read(SITE) or "{}")) or {})
+            except Exception as e:  # noqa: BLE001
+                log.warning("could not read %s: %s", SITE, e)
+                self.site = Site()
             datasets, shas, broken = {}, {}, {}
             for f in sorted((self.root / DATASETS).glob("*.yaml")):
                 raw = f.read_bytes()
@@ -362,6 +370,7 @@ def init_data_repo(root: Path, owner: Person) -> None:
         MODALITIES: yamlio.render([{"id": i, "label": label} for i, label in DEFAULT_MODALITIES]),
         SCHEMA: json.dumps(Dataset.model_json_schema(), indent=2) + "\n",
         "README.md": README,
+        SITE: SITE_TEMPLATE,
     }
     for rel, text in files.items():
         p = root / rel
@@ -372,6 +381,22 @@ def init_data_repo(root: Path, owner: Person) -> None:
         email = owner.email or f"{owner.id}@users.noreply.lab"
         git.commit(["."], "Initialise lab dataset catalog", owner.name, email)
 
+
+SITE_TEMPLATE = """\
+# Who this catalog belongs to: shown in the header, footer, About page and AI skill.
+name: Our research group
+catalog_title: Lab datasets
+# short_name: CogNeuro
+# department: Department of …
+# institution: …
+# website: https://…
+# contact: <person id>          # catalog maintainer
+# logo: branding/logo.png       # relative to this repo
+# favicon: branding/favicon.png
+# about: |
+#   A few sentences about the group.
+# methods: [EEG, fMRI]
+"""
 
 README = """\
 # Lab dataset catalog

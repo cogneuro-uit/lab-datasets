@@ -5,7 +5,7 @@ description: Write a valid YAML entry for the lab dataset catalog (one file per 
 
 # Lab dataset catalog entry
 
-The lab keeps a catalog of every dataset it has collected at $catalog_url. Each dataset is
+The $lab_name keeps a catalog of every dataset it has collected at $catalog_url. Each dataset is
 one YAML file. Your job is to help the user produce a **valid** file for one dataset and
 to get it into the catalog. The catalog holds metadata and links only, never data and never
 personal data about participants.

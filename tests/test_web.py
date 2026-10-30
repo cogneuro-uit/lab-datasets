@@ -56,3 +56,13 @@ def test_people_json_and_suggest_id(client):
     client.post("/new", data={"_mode": "quick", "title": "Eye tracking", "id": "2024-eye-tracking", "contact": "janedoe"})
     assert client.get("/api/suggest-id", params={"title": "The eye tracking", "year": "2024"}).json()["id"] == "2024-eye-tracking-2"
     assert client.get("/api/check-id", params={"id": "2024-eye-tracking"}).json()["ok"] is False
+
+
+def test_site_branding(client, repo):
+    (repo / "branding").mkdir()
+    (repo / "branding/logo.png").write_bytes(b"\x89PNG fake")
+    (repo / "site.yaml").write_text("name: Test Group\ncatalog_title: Test datasets\nlogo: branding/logo.png\n")
+    page = client.get("/about").text
+    assert "<title>About · Test datasets</title>" in page and "Test Group" in page
+    assert client.get("/brand/logo").content == b"\x89PNG fake"
+    assert client.get("/brand/../people.yaml").status_code == 404

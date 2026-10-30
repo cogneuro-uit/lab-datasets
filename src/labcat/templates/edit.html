@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon, field, picker, location_icon %}
-{% block title %}{% if mode == "edit" %}Edit {{ ds.title }}{% elif mode == "quick" %}Quick placeholder{% else %}New dataset{% endif %} · Lab datasets{% endblock %}
+{% block title %}{% if mode == "edit" %}Edit {{ ds.title }}{% elif mode == "quick" %}Quick placeholder{% else %}New dataset{% endif %}{% endblock %}
 {% block body_class %}page-form{% endblock %}
 
 {% block content %}

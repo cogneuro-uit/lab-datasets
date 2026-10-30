@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import icon %}
-{% block title %}History of {{ ds.title }} · Lab datasets{% endblock %}
+{% block title %}History of {{ ds.title }}{% endblock %}
 {% macro show(v) -%}
 {%- if v is none -%}<span class="muted">empty</span>
 {%- elif v is mapping -%}{% for k, x in v.items() %}{{ k }}: {{ x }}{% if not loop.last %}, {% endif %}{% endfor %}

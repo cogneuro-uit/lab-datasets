@@ -14,7 +14,7 @@ from pathlib import Path
 from urllib.parse import quote, unquote
 
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
@@ -57,7 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     cat = Catalog(settings.data_dir, git)
     cat.refresh()
 
-    app = FastAPI(title="Lab datasets", docs_url=None, redoc_url=None)
+    app = FastAPI(title="labcat", docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     templates = Jinja2Templates(directory=HERE / "templates")
     env = templates.env
@@ -102,6 +102,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if ds is None:
             raise HTTPException(404, "No such dataset")
         return ds
+
+    @app.get("/brand/{kind}")
+    def brand(kind: str):
+        rel = {"logo": cat.site.logo, "favicon": cat.site.favicon or cat.site.logo}.get(kind)
+        if not rel:
+            raise HTTPException(404)
+        path = (settings.data_dir / rel).resolve()
+        if not path.is_file() or settings.data_dir not in path.parents:
+            raise HTTPException(404)
+        return FileResponse(path, headers={"Cache-Control": "max-age=3600"})
+
+    @app.get("/about", response_class=HTMLResponse)
+    def about(request: Request):
+        statuses = sorted({d.status for d in cat.datasets.values()})
+        return render(request, "about.html", n_datasets=len(cat.datasets), statuses=statuses)
 
     @app.middleware("http")
     async def refresh_catalog(request: Request, call_next):
