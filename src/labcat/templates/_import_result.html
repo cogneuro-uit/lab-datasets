@@ -1,0 +1,24 @@
+{% from "_macros.html" import icon, status_badge %}
+{% if result.ok %}
+<div class="banner banner-ok">
+  {{ icon("circle-check") }}
+  <div>
+    <strong>Looks good.</strong> “{{ result.ds.title }}” <span class="mono">({{ result.ds.id }})</span> {{ status_badge(result.ds.status) }}
+    <div class="small">Contact: {{ cat.person_name(result.ds.contact) }} · {{ result.score }}% complete
+      {% if result.new_tags %}· new tags will be added: {{ result.new_tags|join(", ") }}{% endif %}</div>
+  </div>
+</div>
+{% elif text and text.strip() %}
+<div class="banner banner-error">
+  {{ icon("triangle-alert") }}
+  <div>
+    <strong>{{ result.message }}</strong>
+    {% if result.errors %}
+    <ul class="small">{% for k, msg in result.errors.items() %}<li><span class="mono">{{ k }}</span>: {{ msg }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if result.errors and ("contact" in result.errors or "contributors" in result.errors) %}
+    <p class="small">People must be in the <a href="/people">people list</a> first; use their ID.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

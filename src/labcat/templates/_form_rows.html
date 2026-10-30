@@ -1,0 +1,92 @@
+{% from "_macros.html" import icon %}
+{# ---------- repeatable rows ---------- #}
+{% macro row_errors(prefix) -%}
+{% for k, msg in errors.items() if k.startswith(prefix) %}
+<p class="error">{{ icon("triangle-alert") }} {{ k[prefix|length:]|replace("_", " ") }}: {{ msg }}</p>
+{% endfor %}
+{%- endmacro %}
+
+{% macro loc_row(i, loc) -%}
+<div class="repeat-row loc-row" data-row>
+  <div class="row-grid">
+    <label class="mini-field kind-field">
+      <span class="label">Type</span>
+      <select name="locations.{{ i }}.kind" data-loc-kind>
+        {% for k, lab in LOCATION_KINDS.items() %}<option value="{{ k }}" {% if get(loc, "kind", "other") == k %}selected{% endif %}>{{ lab }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="mini-field grow">
+      <span class="label">Link or folder path</span>
+      <input type="text" name="locations.{{ i }}.target" value="{{ get(loc, 'url') or get(loc, 'path') or '' }}" data-loc-target
+             placeholder="https://… or /data/projects/…" spellcheck="false">
+    </label>
+  </div>
+  <div class="row-grid">
+    <label class="mini-field grow">
+      <span class="label">Note <span class="muted">(optional)</span></span>
+      <input type="text" name="locations.{{ i }}.note" value="{{ get(loc, 'note', '') }}" placeholder="e.g. raw + BIDS, preprocessed, public copy">
+    </label>
+    <label class="check-inline">
+      <input type="checkbox" name="locations.{{ i }}.is_backup" {% if get(loc, "is_backup") %}checked{% endif %}>
+      <span>{{ icon("shield-check") }} This is a backup copy</span>
+    </label>
+  </div>
+  {{ row_errors("locations." ~ i ~ ".") }}
+  <button type="button" class="row-remove icon-btn" data-remove-row aria-label="Remove this location" title="Remove">{{ icon("trash-2") }}</button>
+</div>
+{%- endmacro %}
+
+{% macro pub_row(group, i, p) -%}
+{% set n = "outputs." ~ group ~ "." ~ i %}
+<div class="repeat-row pub-row" data-row data-pub>
+  <div class="row-grid">
+    <label class="mini-field grow">
+      <span class="label">DOI</span>
+      <span class="input-with-btn">
+        <input type="text" name="{{ n }}.doi" value="{{ get(p, 'doi', '') }}" data-doi placeholder="10.1234/abcd or https://doi.org/…" spellcheck="false">
+        <button type="button" class="btn btn-sm" data-doi-lookup>{{ icon("sparkles") }} Fill in</button>
+      </span>
+    </label>
+  </div>
+  <p class="doi-status small" data-doi-status aria-live="polite"></p>
+  <div class="row-grid">
+    <label class="mini-field grow"><span class="label">Title</span>
+      <input type="text" name="{{ n }}.title" value="{{ get(p, 'title', '') }}" data-pub-field="title"></label>
+  </div>
+  <div class="row-grid">
+    <label class="mini-field grow"><span class="label">Authors</span>
+      <input type="text" name="{{ n }}.authors" value="{{ get(p, 'authors', '') }}" data-pub-field="authors" placeholder="Doe, J., Mittner, M."></label>
+    <label class="mini-field"><span class="label">Journal / server</span>
+      <input type="text" name="{{ n }}.venue" value="{{ get(p, 'venue', '') }}" data-pub-field="venue"></label>
+    <label class="mini-field year-field"><span class="label">Year</span>
+      <input type="number" name="{{ n }}.year" value="{{ get(p, 'year', '') }}" data-pub-field="year" min="1950" max="2100"></label>
+  </div>
+  <input type="hidden" name="{{ n }}.url" value="{{ get(p, 'url', '') }}" data-pub-field="url">
+  {{ row_errors(n ~ ".") }}
+  <button type="button" class="row-remove icon-btn" data-remove-row aria-label="Remove" title="Remove">{{ icon("trash-2") }}</button>
+</div>
+{%- endmacro %}
+
+{% macro code_row(i, c) -%}
+<div class="repeat-row" data-row>
+  <div class="row-grid">
+    <label class="mini-field grow"><span class="label">Repository link</span>
+      <input type="url" name="outputs.code.{{ i }}.url" value="{{ get(c, 'url', '') }}" placeholder="https://github.com/…" spellcheck="false"></label>
+    <label class="mini-field grow"><span class="label">Note <span class="muted">(optional)</span></span>
+      <input type="text" name="outputs.code.{{ i }}.note" value="{{ get(c, 'note', '') }}" placeholder="e.g. analysis scripts for the 2021 paper"></label>
+  </div>
+  {{ row_errors("outputs.code." ~ i ~ ".") }}
+  <button type="button" class="row-remove icon-btn" data-remove-row aria-label="Remove" title="Remove">{{ icon("trash-2") }}</button>
+</div>
+{%- endmacro %}
+
+{% macro repeater(name, rows, add_label, row_macro, group=None) -%}
+<div class="repeater" data-repeater="{{ name }}">
+  <div class="repeat-rows" data-rows>
+    {% for r in rows %}{% if group %}{{ row_macro(group, loop.index0, r) }}{% else %}{{ row_macro(loop.index0, r) }}{% endif %}{% endfor %}
+  </div>
+  <template data-row-template>{% if group %}{{ row_macro(group, "__i__", {}) }}{% else %}{{ row_macro("__i__", {}) }}{% endif %}</template>
+  <button type="button" class="btn btn-dashed" data-add-row>{{ icon("plus") }} {{ add_label }}</button>
+</div>
+{%- endmacro %}
+

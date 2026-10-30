@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, status_badge, location_icon, sharing_icon, citation %}
+{% block title %}{{ ds.title }} · Lab datasets{% endblock %}
+{% block content %}
+<nav class="crumbs"><a href="/">{{ icon("arrow-left") }} All datasets</a></nav>
+
+{% if ds.status == "retired" %}
+<div class="banner banner-warn">
+  {{ icon("archive") }}
+  <div><strong>This dataset is retired.</strong> It is hidden from the catalog but kept, together with its history.</div>
+  <form method="post" action="/d/{{ ds.id }}/status"><input type="hidden" name="status" value="archived"><button class="btn btn-sm">Make active again</button></form>
+</div>
+{% endif %}
+
+<header class="ds-header">
+  <div class="ds-header-main">
+    <div class="ds-meta-line">
+      {{ status_badge(ds.status) }}
+      <button type="button" class="id-chip" data-copy="{{ ds.id }}" title="Copy ID">{{ ds.id }} {{ icon("copy") }}</button>
+    </div>
+    <h1>{{ ds.title }}</h1>
+    <p class="ds-byline">
+      {{ icon("user") }} Contact: <strong>{{ cat.person_name(ds.contact) }}</strong>
+      {% if ds.collected.start %}<span class="sep">·</span>{{ icon("calendar") }} {{ ds.collected.start }}{% if ds.collected.end %} – {{ ds.collected.end }}{% endif %}{% endif %}
+      {% if last %}<span class="sep">·</span>{{ icon("clock") }} Updated {{ last.date|ago }} by {{ last.author_name }}{% endif %}
+    </p>
+  </div>
+  <div class="ds-actions">
+    <a class="btn btn-primary" href="/d/{{ ds.id }}/edit">{{ icon("pencil") }} Edit</a>
+    <a class="btn" href="/d/{{ ds.id }}/history">{{ icon("history") }} History</a>
+    <details class="menu">
+      <summary class="btn btn-icon" aria-label="More actions">{{ icon("menu") }}</summary>
+      <div class="menu-pop">
+        <a href="/d/{{ ds.id }}.yaml">{{ icon("download") }} Download YAML</a>
+        {% if ds.status != "retired" %}
+        <form method="post" action="/d/{{ ds.id }}/status" data-confirm="Retire this dataset? It will be hidden from the catalog, but nothing is deleted.">
+          <input type="hidden" name="status" value="retired">
+          <button type="submit" class="danger">{{ icon("archive") }} Retire dataset…</button>
+        </form>
+        {% endif %}
+      </div>
+    </details>
+  </div>
+</header>
+
+<div class="ds-layout">
+  <div class="ds-main">
+    {% if ds.summary %}
+    <section class="card prose">{{ ds.summary|markdown }}</section>
+    {% endif %}
+
+    <section class="card">
+      <h2 class="card-title">{{ icon("hard-drive") }} Where the data is</h2>
+      {% if ds.locations %}
+      <ul class="locations">
+        {% for loc in ds.locations %}
+        <li class="location kind-{{ loc.kind }}">
+          <span class="loc-icon">{{ location_icon(loc.kind) }}</span>
+          <div class="loc-body">
+            <div class="loc-title">{{ LOCATION_KINDS[loc.kind] }}
+              {% if loc.is_backup %}<span class="pill pill-ok">{{ icon("shield-check") }} backup</span>{% endif %}
+            </div>
+            {% if loc.note %}<div class="loc-note">{{ loc.note }}</div>{% endif %}
+            <div class="loc-target mono">{{ loc.url or loc.path }}</div>
+          </div>
+          <div class="loc-actions">
+            {% if loc.url %}
+            <a class="btn btn-sm" href="{{ loc.url }}" target="_blank" rel="noopener">{{ icon("external-link") }} Open</a>
+            {% endif %}
+            <button type="button" class="btn btn-sm btn-ghost" data-copy="{{ loc.url or loc.path }}">{{ icon("copy") }} Copy</button>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted empty-line">No storage location yet. <a href="/d/{{ ds.id }}/edit#locations">Add one</a> so others can find the data.</p>
+      {% endif %}
+    </section>
+
+    {% set o = ds.outputs %}
+    <section class="card">
+      <h2 class="card-title">{{ icon("book-open") }} Papers, preprints and code</h2>
+      {% if o.publications or o.preprints or o.code or o.related_datasets or related_back %}
+        {% if o.publications %}
+        <h3 class="sub">Publications</h3>
+        {% for p in o.publications %}{{ citation(p) }}{% endfor %}
+        {% endif %}
+        {% if o.preprints %}
+        <h3 class="sub">Preprints</h3>
+        {% for p in o.preprints %}{{ citation(p) }}{% endfor %}
+        {% endif %}
+        {% if o.code %}
+        <h3 class="sub">Code</h3>
+        <ul class="plain-list">
+          {% for c in o.code %}
+          <li>{{ icon("code") }} <a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.url|replace("https://", "") }}</a>{% if c.note %} <span class="muted">· {{ c.note }}</span>{% endif %}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% if o.related_datasets or related_back %}
+        <h3 class="sub">Related datasets</h3>
+        <ul class="plain-list">
+          {% for rid in o.related_datasets %}{% set r = cat.datasets.get(rid) %}
+          <li>{{ icon("database") }} <a href="/d/{{ rid }}">{{ r.title if r else rid }}</a></li>
+          {% endfor %}
+          {% for r in related_back if r.id not in o.related_datasets %}
+          <li>{{ icon("database") }} <a href="/d/{{ r.id }}">{{ r.title }}</a> <span class="muted">(links here)</span></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      {% else %}
+      <p class="muted empty-line">Nothing linked yet. <a href="/d/{{ ds.id }}/edit#outputs">Add a paper, preprint or code repository</a>.</p>
+      {% endif %}
+    </section>
+
+    {% if ds.notes %}
+    <section class="card prose">
+      <h2 class="card-title">{{ icon("sticky-note") }} Notes</h2>
+      {{ ds.notes|markdown }}
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="ds-side">
+    <section class="card completeness">
+      <div class="ring" style="--p: {{ score }}"><span>{{ score }}%</span></div>
+      <div>
+        <h2 class="card-title">Completeness</h2>
+        {% set missing = checks|rejectattr("done")|list %}
+        {% if missing %}
+        <p class="muted small">Still missing:</p>
+        <ul class="missing">
+          {% for c in missing %}<li><a href="/d/{{ ds.id }}/edit#{{ c.section }}">{{ c.label }}</a></li>{% endfor %}
+        </ul>
+        {% else %}
+        <p class="muted small">Everything is filled in. Thank you!</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card facts">
+      <h2 class="card-title">{{ icon("flask-conical") }} The study</h2>
+      <dl>
+        {% if ds.content.modalities %}
+        <dt>Modalities</dt>
+        <dd class="chips">{% for m in ds.content.modalities %}<a class="chip chip-mod" href="/?modality={{ m }}">{{ cat.modality_label(m) }}</a>{% endfor %}</dd>
+        {% endif %}
+        {% if ds.content.n_participants is not none %}<dt>Participants</dt><dd>{{ ds.content.n_participants }}</dd>{% endif %}
+        {% if ds.content.population %}<dt>Population</dt><dd>{{ ds.content.population }}</dd>{% endif %}
+        {% if ds.content.paradigm %}<dt>Paradigm</dt><dd>{{ ds.content.paradigm }}</dd>{% endif %}
+        {% if ds.content.tags %}
+        <dt>Tags</dt>
+        <dd class="chips">{% for t in ds.content.tags %}<a class="chip" href="/?tag={{ t }}">#{{ t }}</a>{% endfor %}</dd>
+        {% endif %}
+        <dt>People</dt>
+        <dd>
+          <span class="person"><span class="avatar avatar-sm">{{ cat.person_name(ds.contact).split()|map("first")|join("")|upper }}</span>{{ cat.person_name(ds.contact) }} <span class="muted small">(contact)</span></span>
+          {% for p in ds.contributors if p != ds.contact %}
+          <span class="person"><span class="avatar avatar-sm">{{ cat.person_name(p).split()|map("first")|join("")|upper }}</span>{{ cat.person_name(p) }}</span>
+          {% endfor %}
+        </dd>
+      </dl>
+      {% if not (ds.content.modalities or ds.content.n_participants is not none or ds.content.population or ds.content.paradigm or ds.content.tags) %}
+      <p class="muted small"><a href="/d/{{ ds.id }}/edit#content">Describe what is in the dataset</a></p>
+      {% endif %}
+    </section>
+
+    {% set l = ds.legal %}
+    <section class="card facts">
+      <h2 class="card-title">{{ icon("scale") }} Ethics and sharing</h2>
+      <dl>
+        <dt>Sharing</dt>
+        <dd>{% if l.sharing %}<span class="pill sharing-{{ l.sharing }}">{{ sharing_icon(l.sharing) }} {{ SHARING[l.sharing] }}</span>{% else %}<span class="muted">not set</span>{% endif %}</dd>
+        {% if l.ethics_ref %}<dt>Ethics approval</dt><dd>{{ l.ethics_ref }}</dd>{% endif %}
+        {% if l.data_protection_ref %}<dt>Data protection</dt><dd>{{ l.data_protection_ref }}</dd>{% endif %}
+        {% if l.consent_scope %}<dt>Consent covers</dt><dd>{{ l.consent_scope }}</dd>{% endif %}
+        {% if l.delete_by %}<dt>Delete by</dt><dd>{{ l.delete_by }}</dd>{% endif %}
+      </dl>
+    </section>
+  </aside>
+</div>
+{% endblock %}

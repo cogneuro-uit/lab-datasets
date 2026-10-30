@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, field, picker, location_icon %}
+{% block title %}{% if mode == "edit" %}Edit {{ ds.title }}{% elif mode == "quick" %}Quick placeholder{% else %}New dataset{% endif %} · Lab datasets{% endblock %}
+{% block body_class %}page-form{% endblock %}
+
+{% block content %}
+{% import "_form_rows.html" as rows with context %}
+{% set steps = [
+  ("basics", "Basics", "file-text", "Name the dataset and say who to ask about it."),
+  ("people", "People & time", "users", "Who worked on it, and when was the data collected?"),
+  ("content", "What's in it", "flask-conical", "What kind of data is it, and from whom?"),
+  ("locations", "Where it's stored", "hard-drive", "Where can the data and its backups be found?"),
+  ("legal", "Ethics & sharing", "scale", "Approvals, consent and who may get the data."),
+  ("outputs", "Papers & code", "book-open", "Publications, preprints and code that belong to it."),
+  ("notes", "Notes", "sticky-note", "Anything else worth knowing."),
+] if mode != "quick" else [("basics", "Basics", "file-text", "")] %}
+
+<nav class="crumbs">
+  {% if mode == "edit" %}<a href="/d/{{ ds.id }}">{{ icon("arrow-left") }} Back to dataset</a>
+  {% else %}<a href="/new">{{ icon("arrow-left") }} Other ways to add a dataset</a>{% endif %}
+</nav>
+
+<div class="form-head">
+  {% if mode == "edit" %}
+  <h1>Edit <span class="muted">·</span> {{ ds.title }}</h1>
+  <p class="lead">Change what you like and press <strong>Save</strong>. Every change is kept in the history.</p>
+  {% elif mode == "quick" %}
+  <h1>Quick placeholder</h1>
+  <p class="lead">Only the essentials now. The dataset page will show what is still missing.</p>
+  {% else %}
+  <h1>New dataset</h1>
+  <p class="lead">A few short steps. Only the first step is required: you can save at any point and fill in the rest later.</p>
+  {% endif %}
+</div>
+
+{% if message %}
+<div class="banner banner-error" role="alert">{{ icon("triangle-alert") }}<div><strong>{{ message }}</strong> Look for the fields marked in red.</div></div>
+{% endif %}
+
+<form method="post" class="dsform mode-{{ mode }}" data-mode="{{ mode }}" novalidate
+      action="{{ '/d/' ~ ds.id ~ '/edit' if mode == 'edit' else '/new' }}" id="dsform">
+  <input type="hidden" name="_mode" value="{{ mode }}">
+  {% if base_sha %}<input type="hidden" name="_base_sha" value="{{ base_sha }}">{% endif %}
+
+  <div class="form-layout">
+    {% if steps|length > 1 %}
+    <nav class="stepper" aria-label="Sections">
+      <ol>
+        {% for key, label, ic, desc in steps %}
+        <li><a href="#{{ key }}" data-step-link="{{ loop.index0 }}">
+          <span class="step-num">{{ icon(ic) }}<span class="step-check">{{ icon("check") }}</span></span>
+          <span class="step-label">{{ label }}</span>
+        </a></li>
+        {% endfor %}
+      </ol>
+    </nav>
+    {% endif %}
+
+    <div class="steps">
+    {# ---------------- 1. Basics ---------------- #}
+    <section class="step card" id="basics" data-step="0">
+      <header class="step-head"><h2>{{ icon("file-text") }} Basics</h2>{% if mode != "quick" %}<p>{{ steps[0][3] }}</p>{% endif %}</header>
+
+      {% call field("title", "Title", errors, hint="A descriptive name, e.g. “Sustained attention and mind-wandering, EEG + pupil”.", required=True) %}
+      <input id="f-title" name="title" type="text" class="input-lg" required minlength="3" value="{{ v.title or '' }}" autocomplete="off" data-title>
+      {% endcall %}
+
+      {% if mode == "edit" %}
+      <div class="field">
+        <span class="label">ID</span>
+        <p class="mono id-static">{{ ds.id }}</p>
+        <p class="hint">The ID is permanent, so that links and history keep working.</p>
+      </div>
+      {% else %}
+      <div class="field-row">
+        {% call field("_year", "Year the study started", errors, cls="year-field") %}
+        <input id="f-_year" name="_year" type="number" min="1980" max="2100" value="{{ (v.id or '')[:4] or get(v, 'collected.start', '')[:4] or this_year }}" data-year>
+        {% endcall %}
+        {% call field("id", "ID", errors, hint="Made from year and title. Used in links and as file name; it cannot be changed later.", required=True, cls="grow") %}
+        <div class="id-input">
+          <input id="f-id" name="id" type="text" class="mono" required pattern="{{ id_pattern[1:-1] }}" value="{{ v.id or '' }}"
+                 placeholder="2024-short-name" spellcheck="false" data-id-input {% if v.id %}data-touched{% endif %}>
+          <span class="id-state small" data-id-state aria-live="polite"></span>
+        </div>
+        {% endcall %}
+      </div>
+      {% endif %}
+
+      {% call field("contact", "Contact person", errors, hint="Who should people ask about this dataset?", required=True) %}
+      <div class="input-with-btn">
+        <select id="f-contact" name="contact" required data-people-select>
+          <option value="">Choose a person…</option>
+          {% for p in cat.people|sort(attribute="name") %}
+          <option value="{{ p.id }}" {% if v.contact == p.id %}selected{% endif %}>{{ p.name }}{% if not p.active %} (alumni){% endif %}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="btn btn-ghost" data-add-person="contact">{{ icon("user-plus") }} <span>New person</span></button>
+      </div>
+      {% endcall %}
+
+      {% call field("status", "Status", errors, required=True) %}
+      <div class="radio-cards" role="radiogroup">
+        {% set status_help = {"planned": "Not started yet", "collecting": "Data collection is ongoing",
+                              "analysing": "Collected, being analysed", "published": "Results are published",
+                              "archived": "Finished and stored away", "retired": "Hidden from the catalog"} %}
+        {% for s, lab in STATUSES.items() if s != "retired" or v.status == "retired" %}
+        <label class="radio-card status-{{ s }}">
+          <input type="radio" name="status" value="{{ s }}" {% if (v.status or "planned") == s %}checked{% endif %}>
+          <span class="rc-title"><span class="dot"></span>{{ lab }}</span>
+          <span class="rc-desc">{{ status_help[s] }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% endcall %}
+
+      {% call field("summary", "Short summary", errors, hint="What was done and why, in 2–4 sentences. You can use **bold**, lists and links (Markdown).") %}
+      <textarea id="f-summary" name="summary" rows="4" placeholder="e.g. 64-channel EEG and pupillometry during a sustained-attention task with thought probes…">{{ v.summary or '' }}</textarea>
+      {% endcall %}
+    </section>
+
+    {% if mode != "quick" %}
+    {# ---------------- 2. People & time ---------------- #}
+    <section class="step card" id="people" data-step="1">
+      <header class="step-head"><h2>{{ icon("users") }} People &amp; time</h2><p>{{ steps[1][3] }}</p></header>
+            {% set people_opts = [] %}{% for p in cat.people|sort(attribute="name") %}{% set _ = people_opts.append([p.id, p.name]) %}{% endfor %}
+      {% call field("contributors", "Who else worked on it?", errors, hint="Start typing a name. Someone missing? Add them with “New person”.") %}
+      <div class="input-with-btn align-start">
+        {{ picker("contributors", v.contributors, people_opts, "Type a name…") }}
+        <button type="button" class="btn btn-ghost" data-add-person="contributors">{{ icon("user-plus") }} <span>New person</span></button>
+      </div>
+      {% endcall %}
+      <div class="field-row">
+        {% call field("collected.start", "Data collection started", errors, hint="Year, or year-month (2019-02).") %}
+        <input id="f-collected-start" name="collected.start" type="text" inputmode="numeric" pattern="\d{4}(-\d{2}(-\d{2})?)?" placeholder="2019-02" value="{{ get(v, 'collected.start', '') }}">
+        {% endcall %}
+        {% call field("collected.end", "Data collection ended", errors, hint="Leave empty if still ongoing.") %}
+        <input id="f-collected-end" name="collected.end" type="text" inputmode="numeric" pattern="\d{4}(-\d{2}(-\d{2})?)?" placeholder="2019-11" value="{{ get(v, 'collected.end', '') }}">
+        {% endcall %}
+      </div>
+    </section>
+
+    {# ---------------- 3. Content ---------------- #}
+    <section class="step card" id="content" data-step="2">
+      <header class="step-head"><h2>{{ icon("flask-conical") }} What's in it</h2><p>{{ steps[2][3] }}</p></header>
+      {% call field("content.modalities", "Modalities", errors, hint="Pick all that apply.") %}
+      <div class="toggle-chips" id="f-content-modalities">
+        {% for m in cat.modalities %}
+        <label class="toggle-chip"><input type="checkbox" name="content.modalities" value="{{ m.id }}" {% if m.id in get(v, 'content.modalities', []) %}checked{% endif %}><span>{{ icon("check") }}{{ m.label }}</span></label>
+        {% endfor %}
+      </div>
+      {% endcall %}
+      <div class="field-row">
+        {% call field("content.n_participants", "Number of participants", errors, cls="narrow") %}
+        <input id="f-content-n_participants" name="content.n_participants" type="number" min="0" value="{{ get(v, 'content.n_participants', '') }}">
+        {% endcall %}
+        {% call field("content.population", "Population", errors, cls="grow") %}
+        <input id="f-content-population" name="content.population" type="text" value="{{ get(v, 'content.population', '') }}" placeholder="e.g. healthy adults 18–35">
+        {% endcall %}
+      </div>
+      {% call field("content.paradigm", "Task / paradigm", errors) %}
+      <input id="f-content-paradigm" name="content.paradigm" type="text" value="{{ get(v, 'content.paradigm', '') }}" placeholder="e.g. finger-tapping random sequence generation">
+      {% endcall %}
+      {% set tag_opts = [] %}{% for t in cat.tags %}{% set _ = tag_opts.append([t, t]) %}{% endfor %}
+      {% call field("content.tags", "Tags", errors, hint="Topics that help others find the dataset. Pick existing tags or type a new one and press Enter.") %}
+      {{ picker("content.tags", get(v, 'content.tags', []), tag_opts, "Type a tag…", allow_new=True) }}
+      {% endcall %}
+    </section>
+
+    {# ---------------- 4. Locations ---------------- #}
+    <section class="step card" id="locations" data-step="3">
+      <header class="step-head"><h2>{{ icon("hard-drive") }} Where it's stored</h2><p>{{ steps[3][3] }}</p></header>
+      <details class="tip">
+        <summary>{{ icon("circle-help") }} How do I get the link?</summary>
+        <ul>
+          <li><strong>Teams / SharePoint:</strong> open the folder in Teams, click the three dots → <em>Copy link</em>, and paste it here.</li>
+          <li><strong>Lab server:</strong> paste the folder path, e.g. <span class="mono">/data/projects/2019-eeg-attention</span>.</li>
+          <li><strong>OSF, Zenodo, OpenNeuro …:</strong> copy the address from the browser.</li>
+        </ul>
+        <p>Add one entry per copy. Tick <em>backup</em> for copies that exist for safety.</p>
+      </details>
+      {% set locs = v.locations if v.locations else ([{}] if mode == "wizard" else []) %}
+      {{ rows.repeater("locations", locs, "Add a location", rows.loc_row) }}
+    </section>
+
+    {# ---------------- 5. Legal ---------------- #}
+    <section class="step card" id="legal" data-step="4">
+      <header class="step-head"><h2>{{ icon("scale") }} Ethics &amp; sharing</h2><p>{{ steps[4][3] }}</p></header>
+      {% call field("legal.sharing", "Who may get the data?", errors) %}
+      {% set sharing_help = {"open": "Anyone, e.g. publicly on OSF", "on-request": "Researchers who ask us",
+                             "internal": "Only people in the lab", "restricted": "Special limits; check the consent"} %}
+      <div class="radio-cards cols-4" role="radiogroup">
+        {% for s, lab in SHARING.items() %}
+        <label class="radio-card sharing-{{ s }}">
+          <input type="radio" name="legal.sharing" value="{{ s }}" {% if get(v, 'legal.sharing') == s %}checked{% endif %}>
+          <span class="rc-title">{{ lab }}</span>
+          <span class="rc-desc">{{ sharing_help[s] }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <button type="button" class="link-btn small" data-clear-radio="legal.sharing">Not decided yet</button>
+      {% endcall %}
+      <div class="field-row">
+        {% call field("legal.ethics_ref", "Ethics approval (REK) reference", errors, cls="grow") %}
+        <input id="f-legal-ethics_ref" name="legal.ethics_ref" type="text" value="{{ get(v, 'legal.ethics_ref', '') }}" placeholder="e.g. REK 2018/1234">
+        {% endcall %}
+        {% call field("legal.data_protection_ref", "Data protection (Sikt) reference", errors, cls="grow") %}
+        <input id="f-legal-data_protection_ref" name="legal.data_protection_ref" type="text" value="{{ get(v, 'legal.data_protection_ref', '') }}" placeholder="e.g. Sikt 123456">
+        {% endcall %}
+      </div>
+      {% call field("legal.consent_scope", "What did participants consent to?", errors, hint="In your own words, e.g. “reuse within research on attention; no sharing of raw data outside the EU”.") %}
+      <textarea id="f-legal-consent_scope" name="legal.consent_scope" rows="2">{{ get(v, 'legal.consent_scope', '') }}</textarea>
+      {% endcall %}
+      {% call field("legal.delete_by", "Must be deleted by", errors, hint="Only if the approval sets an end date.", cls="narrow") %}
+      <input id="f-legal-delete_by" name="legal.delete_by" type="date" value="{{ get(v, 'legal.delete_by', '') }}">
+      {% endcall %}
+    </section>
+
+    {# ---------------- 6. Outputs ---------------- #}
+    <section class="step card" id="outputs" data-step="5">
+      <header class="step-head"><h2>{{ icon("book-open") }} Papers &amp; code</h2><p>{{ steps[5][3] }}</p></header>
+      <p class="hint">Paste a DOI and press <strong>Fill in</strong>: title, authors and year are looked up for you.</p>
+      <h3 class="sub">Publications</h3>
+      {{ rows.repeater("publications", get(v, 'outputs.publications', []), "Add a publication", rows.pub_row, "publications") }}
+      <h3 class="sub">Preprints</h3>
+      {{ rows.repeater("preprints", get(v, 'outputs.preprints', []), "Add a preprint", rows.pub_row, "preprints") }}
+      <h3 class="sub">Code</h3>
+      {{ rows.repeater("code", get(v, 'outputs.code', []), "Add a code repository", rows.code_row) }}
+      {% set ds_opts = [] %}{% for d in cat.datasets.values()|sort(attribute="id") if not ds or d.id != ds.id %}{% set _ = ds_opts.append([d.id, d.title]) %}{% endfor %}
+      <h3 class="sub">Related datasets</h3>
+      {% call field("outputs.related_datasets", "Other datasets this one belongs with", errors, hint="e.g. a pilot study, or a follow-up with the same participants.") %}
+      {{ picker("outputs.related_datasets", get(v, 'outputs.related_datasets', []), ds_opts, "Type a dataset title…") }}
+      {% endcall %}
+    </section>
+
+    {# ---------------- 7. Notes ---------------- #}
+    <section class="step card" id="notes" data-step="6">
+      <header class="step-head"><h2>{{ icon("sticky-note") }} Notes</h2><p>{{ steps[6][3] }}</p></header>
+      {% call field("notes", "Notes", errors, hint="Free text, e.g. known problems, which subjects to exclude, file formats. Markdown allowed.") %}
+      <textarea id="f-notes" name="notes" rows="6">{{ v.notes or '' }}</textarea>
+      {% endcall %}
+      {% if mode == "wizard" %}
+      <div class="review" data-review>
+        <h3 class="sub">{{ icon("circle-check") }} Overview</h3>
+        <ul class="review-list" data-review-list></ul>
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+    </div>
+  </div>
+
+  <div class="form-bar">
+    <div class="form-bar-inner">
+      {% if mode == "wizard" %}
+      <button type="button" class="btn btn-ghost" data-prev>{{ icon("chevron-left") }} Back</button>
+      <span class="step-count small muted" data-step-count></span>
+      <span class="spacer"></span>
+      <button type="submit" class="btn" data-save-early title="Create the dataset with what you have entered so far">{{ icon("save") }} <span>Save &amp; finish later</span></button>
+      <button type="button" class="btn btn-primary" data-next>Next {{ icon("chevron-right") }}</button>
+      <button type="submit" class="btn btn-primary" data-finish hidden>{{ icon("check") }} Create dataset</button>
+      {% elif mode == "quick" %}
+      <a class="btn btn-ghost" href="/new">Cancel</a>
+      <span class="spacer"></span>
+      <button type="submit" class="btn btn-primary">{{ icon("check") }} Create placeholder</button>
+      {% else %}
+      <a class="btn btn-ghost" href="/d/{{ ds.id }}">Cancel</a>
+      <span class="spacer"></span>
+      <span class="small muted unsaved" data-unsaved hidden>Unsaved changes</span>
+      <button type="submit" class="btn btn-primary">{{ icon("save") }} Save changes</button>
+      {% endif %}
+    </div>
+  </div>
+</form>
+
+<dialog class="dialog" id="person-dialog">
+  <form method="dialog" class="dialog-form" id="person-form">
+    <h2>{{ icon("user-plus") }} Add a person</h2>
+    <p class="muted small">They are added to the lab's list of people and can then be picked everywhere.</p>
+    <label class="mini-field"><span class="label">Full name <span class="req">*</span></span><input name="name" required autocomplete="off"></label>
+    <label class="mini-field"><span class="label">Email <span class="muted">(optional)</span></span><input name="email" type="email" autocomplete="off"></label>
+    <label class="check-inline"><input type="checkbox" name="alumni"> <span>Has left the lab (alumni)</span></label>
+    <p class="error" data-person-error hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-ghost" value="cancel" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary" value="ok">Add person</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}<script src="/static/form.js"></script>{% endblock %}

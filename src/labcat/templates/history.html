@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}History of {{ ds.title }} · Lab datasets{% endblock %}
+{% macro show(v) -%}
+{%- if v is none -%}<span class="muted">empty</span>
+{%- elif v is mapping -%}{% for k, x in v.items() %}{{ k }}: {{ x }}{% if not loop.last %}, {% endif %}{% endfor %}
+{%- else -%}{{ v|truncate(140) }}{%- endif -%}
+{%- endmacro %}
+{% block content %}
+<nav class="crumbs"><a href="/d/{{ ds.id }}">{{ icon("arrow-left") }} {{ ds.title }}</a></nav>
+<div class="form-head">
+  <h1>History</h1>
+  <p class="lead">Every change to this dataset, newest first. Restoring an old version adds a new change, so nothing is ever lost.</p>
+</div>
+<ol class="timeline">
+  {% for e in entries %}
+  <li class="tl-item">
+    <span class="avatar avatar-sm">{{ e.commit.author_name.split()|map("first")|join("")|upper }}</span>
+    <div class="tl-body card">
+      <div class="tl-head">
+        <strong>{{ e.commit.author_name }}</strong>
+        <span class="muted">{{ "created this dataset" if e.created else e.commit.subject.split(":")[0]|lower if e.commit.subject.startswith(("Restore", "Retire", "Reactivate")) else "made changes" }}</span>
+        <span class="spacer"></span>
+        <time class="muted small" datetime="{{ e.commit.date }}" title="{{ e.commit.date|date }}">{{ e.commit.date|ago }}</time>
+        {% if loop.index0 == 0 %}<span class="pill">current</span>{% endif %}
+      </div>
+      {% if not e.created %}
+      <ul class="changes">
+        {% for c in e.changes %}
+        <li>
+          <span class="ch-label">{{ c.label }}</span>
+          {% if c.is_list %}
+            {% for a in c.added %}<span class="ch-add">+ {{ a }}</span>{% endfor %}
+            {% for r in c.removed %}<span class="ch-del">− {{ r }}</span>{% endfor %}
+          {% elif c.old is string and c.old|length > 60 or c.new is string and c.new|length > 60 %}
+            <details class="ch-long"><summary>changed (show)</summary>
+              <div class="ch-del block">{{ show(c.old) }}</div><div class="ch-add block">{{ show(c.new) }}</div></details>
+          {% else %}
+            <span class="ch-del">{{ show(c.old) }}</span> {{ icon("arrow-right") }} <span class="ch-add">{{ show(c.new) }}</span>
+          {% endif %}
+        </li>
+        {% else %}
+        <li class="muted">No visible field changes (formatting only).</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if loop.index0 > 0 %}
+      <form method="post" action="/d/{{ ds.id }}/restore/{{ e.commit.sha }}" class="tl-restore"
+            data-confirm="Restore the dataset to how it was after this change ({{ e.commit.date|date }})? This is added as a new change.">
+        <button class="btn btn-sm btn-ghost">{{ icon("undo-2") }} Restore this version</button>
+      </form>
+      {% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ol>
+{% endblock %}

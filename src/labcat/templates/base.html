@@ -1,0 +1,58 @@
+{% from "_macros.html" import icon %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Lab datasets{% endblock %}</title>
+  <script>
+    // Apply the saved theme before first paint (no flash).
+    try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2' stroke-linecap='round'><ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M3 5v14a9 3 0 0 0 18 0V5'/><path d='M3 12a9 3 0 0 0 18 0'/></svg>">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/vendor/htmx-2.0.11.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">
+        <span class="brand-mark">{{ icon("database") }}</span>
+        <span class="brand-text">Lab datasets</span>
+      </a>
+      <nav class="mainnav" aria-label="Main">
+        {% set path = request.url.path %}
+        <a href="/" {% if path == "/" or path.startswith("/d/") %}aria-current="page"{% endif %}>{{ icon("layout-grid") }}<span>Catalog</span></a>
+        <a href="/changes" {% if path == "/changes" %}aria-current="page"{% endif %}>{{ icon("history") }}<span>Recent changes</span></a>
+        <a href="/people" {% if path == "/people" %}aria-current="page"{% endif %}>{{ icon("users") }}<span>People</span></a>
+      </nav>
+      <div class="topbar-actions">
+        <a class="btn btn-primary btn-new" href="/new">{{ icon("plus") }}<span>New dataset</span></a>
+        <button class="icon-btn" type="button" id="theme-toggle" title="Switch light / dark theme" aria-label="Switch light / dark theme">
+          <span class="when-light">{{ icon("moon") }}</span><span class="when-dark">{{ icon("sun") }}</span>
+        </button>
+        <span class="avatar" title="Signed in as {{ user.name }} (no login yet)">{{ user.name.split()|map("first")|join("")|upper }}</span>
+      </div>
+    </div>
+  </header>
+
+  {% if flash %}
+  <div class="flash" role="status" data-flash>
+    {{ icon("circle-check") }}<span>{{ flash }}</span>
+    <button type="button" class="icon-btn" aria-label="Dismiss" data-dismiss>{{ icon("x") }}</button>
+  </div>
+  {% endif %}
+
+  <main id="main" class="{% block main_class %}container{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer container">
+    <span>Lab dataset catalog · metadata and links only, no data</span>
+    <span><a href="/export.csv">{{ icon("download") }} Export CSV</a></span>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

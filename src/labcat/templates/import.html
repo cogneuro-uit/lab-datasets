@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}Import YAML · Lab datasets{% endblock %}
+{% block content %}
+<nav class="crumbs"><a href="/new">{{ icon("arrow-left") }} Other ways to add a dataset</a></nav>
+<div class="form-head">
+  <h1>Import a YAML file</h1>
+  <p class="lead">Upload a file or paste its content. It is checked before anything is saved.</p>
+</div>
+<form method="post" action="/new/import" enctype="multipart/form-data" class="card import-form"
+      hx-post="/new/import/check" hx-trigger="input changed delay:500ms from:#yaml-text, load"
+      hx-target="#import-result" hx-encoding="multipart/form-data" id="import-form">
+  <label class="dropzone" for="yaml-file" data-dropzone="yaml-text">
+    {{ icon("upload") }}
+    <span><strong>Choose a .yaml file</strong> or drop it here</span>
+    <span class="small muted" data-file-name></span>
+    <input type="file" id="yaml-file" name="file" accept=".yaml,.yml,text/yaml" class="sr-only">
+  </label>
+  <div class="or"><span>or paste it</span></div>
+  <textarea id="yaml-text" name="yaml" rows="14" class="mono" spellcheck="false"
+            placeholder="id: 2024-my-study&#10;title: My study&#10;contact: matthias&#10;status: planned&#10;…">{{ text }}</textarea>
+  <div id="import-result" aria-live="polite">{% if result %}{% include "_import_result.html" %}{% endif %}</div>
+  <div class="form-actions">
+    <a class="btn btn-ghost" href="/new">Cancel</a>
+    <button type="submit" class="btn btn-primary">{{ icon("file-plus") }} Import dataset</button>
+  </div>
+</form>
+<details class="tip card">
+  <summary>{{ icon("circle-help") }} What should the file look like?</summary>
+  <p>One dataset per file. Required are <span class="mono">id</span> (year-short-name), <span class="mono">title</span>,
+     <span class="mono">contact</span> (a person ID from the <a href="/people">people list</a>) and <span class="mono">status</span>.
+     Download any existing dataset as YAML (menu on its page) to see a full example.</p>
+<pre class="mono code-block">id: 2019-eeg-attention
+title: Sustained attention and mind-wandering, EEG + pupil
+status: published
+contact: matthias
+content:
+  modalities: [eeg, eye-tracking]
+  n_participants: 42
+  tags: [attention, mind-wandering]
+locations:
+  - kind: osf
+    url: https://osf.io/abc12/</pre>
+</details>
+{% endblock %}

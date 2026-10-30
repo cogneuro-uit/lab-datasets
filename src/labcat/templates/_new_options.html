@@ -1,0 +1,25 @@
+{% from "_macros.html" import icon %}
+<div class="option-cards">
+  <a class="option-card recommended" href="/new/wizard">
+    <span class="option-icon">{{ icon("wand-sparkles") }}</span>
+    <span class="option-body">
+      <strong>Step by step</strong>
+      <span>A guided form that asks about the study, people, storage, ethics and papers. You can skip anything and finish later.</span>
+    </span>
+    <span class="option-tag">Recommended</span>
+  </a>
+  <a class="option-card" href="/new/quick">
+    <span class="option-icon">{{ icon("zap") }}</span>
+    <span class="option-body">
+      <strong>Quick placeholder</strong>
+      <span>Only a title and a contact person, for example for a study you are planning. Fill in the details later.</span>
+    </span>
+  </a>
+  <a class="option-card" href="/new/import">
+    <span class="option-icon">{{ icon("file-up") }}</span>
+    <span class="option-body">
+      <strong>Import a YAML file</strong>
+      <span>Upload or paste a dataset description that is already written in the catalog format.</span>
+    </span>
+  </a>
+</div>

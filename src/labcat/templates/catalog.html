@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block content %}
+{% if not index %}
+<section class="empty-hero">
+  <div class="empty-illustration">{{ icon("database") }}</div>
+  <h1>Welcome to the lab dataset catalog</h1>
+  <p class="lead">One place that lists every dataset the lab has collected, where it is stored, and which papers and code belong to it.
+     There is nothing here yet. Add the first dataset:</p>
+  {% include "_new_options.html" %}
+</section>
+{% else %}
+<section class="hero">
+  <div>
+    <h1>Lab datasets</h1>
+    <p class="lead">{{ index|length }} dataset{{ "s" if index|length != 1 }}. Search by title, topic, method, people or tags.</p>
+  </div>
+  <label class="search" for="q">
+    {{ icon("search") }}
+    <input id="q" type="search" placeholder="Search datasets…" autocomplete="off" spellcheck="false">
+    <kbd title="Press / to search">/</kbd>
+  </label>
+</section>
+
+<div class="catalog-layout">
+  <aside class="facets" id="facets" aria-label="Filters">
+    <div class="facets-head">
+      <h2>{{ icon("sliders-horizontal") }} Filter</h2>
+      <button type="button" class="link-btn" id="clear-filters" hidden>Clear all</button>
+      <button type="button" class="icon-btn facets-close" id="facets-close" aria-label="Close filters">{{ icon("x") }}</button>
+    </div>
+    <div id="facet-groups"></div>
+    <label class="switch">
+      <input type="checkbox" id="show-retired"> <span>Show retired datasets</span>
+    </label>
+  </aside>
+
+  <section class="results" aria-live="polite">
+    <div class="results-bar">
+      <button type="button" class="btn btn-ghost facets-open" id="facets-open">{{ icon("filter") }} Filter <span class="count-pill" id="filter-count" hidden></span></button>
+      <p class="result-count" id="count"></p>
+      <div class="results-tools">
+        <label class="select-inline">
+          <span class="sr-only">Sort by</span>
+          <select id="sort">
+            <option value="updated">Recently updated</option>
+            <option value="year">Newest first</option>
+            <option value="title">Title A–Z</option>
+          </select>
+        </label>
+        <div class="segmented" role="group" aria-label="View">
+          <button type="button" data-view="cards" title="Cards" aria-label="Card view">{{ icon("layout-grid") }}</button>
+          <button type="button" data-view="table" title="Table" aria-label="Table view">{{ icon("list") }}</button>
+        </div>
+      </div>
+    </div>
+    <div class="active-filters" id="active-filters"></div>
+    <div id="results"></div>
+    <div class="no-results" id="no-results" hidden>
+      {{ icon("search") }}
+      <p><strong>No datasets match.</strong><br>Try fewer words, or clear the filters.</p>
+      <button type="button" class="btn" id="reset-all">Reset search and filters</button>
+    </div>
+  </section>
+</div>
+<script type="application/json" id="catalog-data">{{ index|tojson }}</script>
+<script type="application/json" id="catalog-meta">{{ meta|tojson }}</script>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if index %}
+<script src="/static/vendor/minisearch-7.2.0.js"></script>
+<script src="/static/catalog.js"></script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, field %}
+{% block title %}People · Lab datasets{% endblock %}
+{% block content %}
+<div class="form-head">
+  <h1>People</h1>
+  <p class="lead">Lab members, alumni and collaborators who can be named as contact or contributor.</p>
+</div>
+<div class="people-layout">
+  <section class="card">
+    <ul class="people-list">
+      {% for p in cat.people|sort(attribute="name") %}
+      <li>
+        <span class="avatar">{{ p.name.split()|map("first")|join("")|upper }}</span>
+        <div>
+          <strong>{{ p.name }}</strong>{% if not p.active %} <span class="pill">alumni</span>{% endif %}
+          <div class="small muted"><span class="mono">{{ p.id }}</span>{% if p.email %} · {{ p.email }}{% endif %}</div>
+        </div>
+        <span class="spacer"></span>
+        {% if counts.get(p.id) %}<a class="small" href="/?person={{ p.id }}">{{ counts[p.id] }} dataset{{ "s" if counts[p.id] != 1 }}</a>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  <section class="card">
+    <h2 class="card-title">{{ icon("user-plus") }} Add a person</h2>
+    <form method="post" action="/people" class="stack">
+      {% call field("name", "Full name", errors, required=True) %}<input id="f-name" name="name" required value="{{ v.name or '' }}">{% endcall %}
+      {% call field("id", "Short ID", errors, hint="Lowercase, used in the YAML files. Leave empty to make one from the name.") %}<input id="f-id" name="id" class="mono" value="{{ v.id or '' }}" placeholder="e.g. jdoe">{% endcall %}
+      {% call field("email", "Email", errors) %}<input id="f-email" name="email" type="email" value="{{ v.email or '' }}">{% endcall %}
+      {% call field("orcid", "ORCID", errors) %}<input id="f-orcid" name="orcid" value="{{ v.orcid or '' }}" placeholder="0000-0000-0000-0000">{% endcall %}
+      <label class="check-inline"><input type="checkbox" name="alumni"> <span>Has left the lab (alumni)</span></label>
+      <button class="btn btn-primary">{{ icon("plus") }} Add person</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

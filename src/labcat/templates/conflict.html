@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block title %}Edit conflict · Lab datasets{% endblock %}
+{% macro show(v) -%}
+{%- if v is none -%}<span class="muted">empty</span>
+{%- elif v is sequence and v is not string -%}{% for x in v %}<div>{{ x if x is string else x|tojson }}</div>{% endfor %}
+{%- else -%}{{ v }}{%- endif -%}
+{%- endmacro %}
+{% block content %}
+<nav class="crumbs"><a href="/d/{{ ds.id }}">{{ icon("arrow-left") }} {{ ds.title }}</a></nav>
+<div class="banner banner-warn">
+  {{ icon("triangle-alert") }}
+  <div><strong>{{ c.last_commit.author_name if c.last_commit else "Someone" }} changed this dataset while you were editing it.</strong>
+    Some of the same fields were changed by both of you. Choose which version to keep.</div>
+</div>
+<section class="card">
+  <table class="conflict-table">
+    <thead><tr><th>Field</th><th>Their version (saved)</th><th>Your version</th></tr></thead>
+    <tbody>
+    {% for p in c.paths %}
+      {% set parts = p.split(".") %}
+      <tr>
+        <th>{{ p }}</th>
+        <td>{{ show(get(c.theirs, p)) }}</td>
+        <td>{{ show(get(c.mine, p)) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="small muted">Fields that only one of you changed are combined automatically.</p>
+  <form method="post" action="/d/{{ ds.id }}/edit" class="form-actions">
+    {% for k, val in items %}{% if k != "_resolve" %}<input type="hidden" name="{{ k }}" value="{{ val }}">{% endif %}{% endfor %}
+    <input type="hidden" name="_resolve" value="mine">
+    <a class="btn" href="/d/{{ ds.id }}">{{ icon("x") }} Keep theirs, drop my changes</a>
+    <button class="btn btn-primary">{{ icon("check") }} Use my version for these fields</button>
+  </form>
+</section>
+{% endblock %}

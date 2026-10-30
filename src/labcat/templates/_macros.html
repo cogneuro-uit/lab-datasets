@@ -1,0 +1,56 @@
+{% macro icon(name, cls="") -%}
+<svg class="icon {{ cls }}" aria-hidden="true"><use href="/static/icons.svg#i-{{ name }}"/></svg>
+{%- endmacro %}
+
+{% macro status_badge(status) -%}
+<span class="badge status-{{ status }}"><span class="dot"></span>{{ STATUSES[status] }}</span>
+{%- endmacro %}
+
+{% macro location_icon(kind) -%}
+{{ icon({"teams": "users", "server": "server", "osf": "globe", "zenodo": "archive", "openneuro": "brain",
+         "figshare": "layers", "other": "link"}[kind] or "link") }}
+{%- endmacro %}
+
+{% macro sharing_icon(level) -%}
+{{ icon({"open": "lock-open", "on-request": "at-sign", "internal": "users", "restricted": "lock"}[level] or "lock") }}
+{%- endmacro %}
+
+{# A form field wrapper with label, hint and error message. #}
+{% macro field(name, label, errors, hint=None, required=False, cls="") -%}
+<div class="field {{ cls }} {% if errors.get(name) %}has-error{% endif %}" data-field="{{ name }}">
+  <label class="label" for="f-{{ name|replace('.', '-') }}">{{ label }}{% if required %} <span class="req" title="required">*</span>{% endif %}</label>
+  {{ caller() }}
+  {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+  {% if errors.get(name) %}<p class="error">{{ icon("triangle-alert") }} {{ errors[name] }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{# Chips with autocomplete; values are submitted as repeated hidden inputs named `name`. #}
+{% macro picker(name, selected, options, placeholder="Type to search…", allow_new=False) -%}
+<div class="picker" data-picker data-name="{{ name }}" {% if allow_new %}data-allow-new{% endif %}
+     data-options="{{ options|tojson_attr }}" id="f-{{ name|replace('.', '-') }}-picker">
+  <div class="picker-box">
+    {% set labels = dict(options) %}
+    {% for val in selected or [] %}
+    <span class="chip" data-value="{{ val }}">{{ labels.get(val, val) }}<button type="button" aria-label="Remove {{ labels.get(val, val) }}" data-remove>{{ icon("x") }}</button><input type="hidden" name="{{ name }}" value="{{ val }}"></span>
+    {% endfor %}
+    <input class="picker-input" id="f-{{ name|replace('.', '-') }}" type="text" autocomplete="off" placeholder="{{ placeholder }}"
+           role="combobox" aria-expanded="false" aria-autocomplete="list">
+  </div>
+  <ul class="picker-menu" role="listbox" hidden></ul>
+</div>
+{%- endmacro %}
+
+{% macro citation(p) -%}
+<div class="citation">
+  <div class="citation-title">
+    {% if p.doi %}<a href="https://doi.org/{{ p.doi }}" target="_blank" rel="noopener">{{ p.title or p.doi }}</a>
+    {% elif p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.title or p.url }}</a>
+    {% else %}{{ p.title }}{% endif %}
+  </div>
+  <div class="citation-meta">
+    {% if p.authors %}{{ p.authors }}{% endif %}{% if p.year %} ({{ p.year }}){% endif %}{% if p.venue %} · <em>{{ p.venue }}</em>{% endif %}
+    {% if p.doi %}<span class="mono muted"> · doi:{{ p.doi }}</span>{% endif %}
+  </div>
+</div>
+{%- endmacro %}

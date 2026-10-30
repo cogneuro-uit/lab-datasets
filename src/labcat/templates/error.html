@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon %}
+{% block content %}
+<section class="empty-hero">
+  <div class="empty-illustration">{{ icon("search") }}</div>
+  <h1>{{ title }}</h1>
+  <p class="lead">{{ message }}</p>
+  <a class="btn btn-primary" href="/">Back to the catalog</a>
+</section>
+{% endblock %}
