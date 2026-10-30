@@ -80,6 +80,19 @@
 </div>
 {%- endmacro %}
 
+{% macro canvas_row(i, c) -%}
+<div class="repeat-row" data-row>
+  <div class="row-grid">
+    <label class="mini-field grow"><span class="label">Canvas link</span>
+      <input type="url" name="slack.canvases.{{ i }}.url" value="{{ get(c, 'url', '') }}" placeholder="https://cogneuro-uit.slack.com/docs/…" spellcheck="false"></label>
+    <label class="mini-field grow"><span class="label">What is it? <span class="muted">(optional)</span></span>
+      <input type="text" name="slack.canvases.{{ i }}.title" value="{{ get(c, 'title', '') }}" placeholder="e.g. Analysis plan, Lab notebook"></label>
+  </div>
+  {{ row_errors("slack.canvases." ~ i ~ ".") }}
+  <button type="button" class="row-remove icon-btn" data-remove-row aria-label="Remove" title="Remove">{{ icon("trash-2") }}</button>
+</div>
+{%- endmacro %}
+
 {% macro repeater(name, rows, add_label, row_macro, group=None) -%}
 <div class="repeater" data-repeater="{{ name }}">
   <div class="repeat-rows" data-rows>

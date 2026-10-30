@@ -165,6 +165,26 @@
       {% endif %}
     </section>
 
+    {% if ds.slack.channel or ds.slack.canvases %}
+    {% set ch_url = slack_channel_url(ds.slack.channel, cat.site.slack_workspace) %}
+    <section class="card facts">
+      <h2 class="card-title">{{ icon("message-square") }} Discussion</h2>
+      {% if ds.slack.channel %}
+      <div class="slack-channel">
+        <span class="mono">{% if ds.slack.channel.startswith("http") %}Slack channel{% else %}#{{ ds.slack.channel }}{% endif %}</span>
+        {% if ch_url %}<a class="btn btn-sm" href="{{ ch_url }}" target="_blank" rel="noopener">{{ icon("external-link") }} Open in Slack</a>{% endif %}
+      </div>
+      {% endif %}
+      {% if ds.slack.canvases %}
+      <ul class="plain-list canvases">
+        {% for c in ds.slack.canvases %}
+        <li>{{ icon("file-text") }} <a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.title or "Canvas" }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </section>
+    {% endif %}
+
     {% set l = ds.legal %}
     <section class="card facts">
       <h2 class="card-title">{{ icon("scale") }} Ethics and sharing</h2>

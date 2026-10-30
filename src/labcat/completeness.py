@@ -19,6 +19,7 @@ def checks(ds: Dataset) -> list[Check]:
     out = [
         Check("Short summary", bool(ds.summary), "basics"),
         Check("When the data was collected", bool(ds.collected.start), "people"),
+        Check("Slack channel for discussion", bool(ds.slack.channel), "people"),
         Check("Modalities", bool(c.modalities), "content"),
         Check("Number of participants", c.n_participants is not None, "content"),
         Check("Population or paradigm", bool(c.population or c.paradigm), "content"),

@@ -118,6 +118,13 @@ class Checker:
         for c in d.get("contributors") or []:
             if c not in self.people:
                 self.errors.append(f"contributors: unknown person id '{c}'")
+        slack = d.get("slack")
+        if isinstance(slack, dict):
+            if "channel" in slack and slack["channel"] is None:
+                self.errors.append("slack.channel: is empty; write the name without # (in YAML a # starts a comment)")
+            ch = slack.get("channel")
+            if isinstance(ch, str) and not ch.startswith("http") and not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,79}", ch):
+                self.errors.append(f"slack.channel: '{ch}' should be a channel name like rlmw-project (lowercase, no # or spaces)")
         for k in ("start", "end"):
             v = (d.get("collected") or {}).get(k)
             if v is not None and not (isinstance(v, (str, int)) and PARTIAL_DATE.match(str(v))):

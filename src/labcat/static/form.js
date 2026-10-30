@@ -313,7 +313,7 @@
     const checks = [
       ["Title, contact and status", val("title") && val("contact"), 0],
       ["Summary", val("summary"), 0],
-      ["People and collection period", any('[name="contributors"]') || val("collected.start"), 1],
+      ["People, Slack channel and collection period", any('[name="contributors"]') || val("slack.channel") || val("collected.start"), 1],
       ["Modalities", any('[name="content.modalities"]:checked'), 2],
       ["Participants, population, paradigm", val("content.n_participants") || val("content.population") || val("content.paradigm"), 2],
       ["Tags", any('[name="content.tags"]'), 2],

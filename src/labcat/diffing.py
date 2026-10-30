@@ -13,6 +13,9 @@ LABELS: dict[str, str] = {
     "summary": "Summary",
     "contact": "Contact person",
     "contributors": "Contributors",
+    "slack": "Slack",
+    "slack.channel": "Slack channel",
+    "slack.canvases": "Slack canvases",
     "collected": "Collection period",
     "collected.start": "Collection start",
     "collected.end": "Collection end",
@@ -37,7 +40,7 @@ LABELS: dict[str, str] = {
     "notes": "Notes",
 }
 
-GROUPS = ("collected", "content", "legal", "outputs")
+GROUPS = ("slack", "collected", "content", "legal", "outputs")
 
 Path = tuple[str, ...]
 

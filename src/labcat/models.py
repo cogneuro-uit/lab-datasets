@@ -75,6 +75,22 @@ def _normalize_doi(v):
     return v
 
 
+def _slack_channel(v):
+    """A channel name (with or without #) or a link copied from Slack."""
+    v = _blank_to_none(v)
+    if v is None:
+        return None
+    v = str(v).strip()
+    if re.match(r"^https?://", v):
+        if "slack.com/" not in v:
+            raise ValueError("this is not a Slack link")
+        return v
+    v = v.lstrip("#").strip().lower()
+    if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,79}", v):
+        raise ValueError("use the channel name, e.g. rlmw-project (lowercase, no spaces)")
+    return v
+
+
 OptStr = Annotated[str | None, BeforeValidator(_blank_to_none)]
 PartialDate = Annotated[str | None, BeforeValidator(_partial_date)]
 Doi = Annotated[str | None, BeforeValidator(_normalize_doi)]
@@ -130,6 +146,16 @@ class CodeRepo(Model):
     note: OptStr = None
 
 
+class Canvas(Model):
+    url: Annotated[str, Field(pattern=r"^https?://")]
+    title: OptStr = None
+
+
+class SlackInfo(Model):
+    channel: Annotated[str | None, BeforeValidator(_slack_channel)] = None
+    canvases: list[Canvas] = []
+
+
 class Outputs(Model):
     publications: list[Publication] = []
     preprints: list[Publication] = []
@@ -144,6 +170,7 @@ class Dataset(Model):
     summary: OptStr = None
     contact: Annotated[str, Field(min_length=1)]
     contributors: list[str] = []
+    slack: SlackInfo = SlackInfo()
     collected: Period = Period()
     content: Content = Content()
     legal: Legal = Legal()
@@ -196,6 +223,17 @@ class Modality(Model):
     label: str
 
 
+def slack_channel_url(channel: str | None, workspace: str | None) -> str | None:
+    """A link that opens the channel in Slack (by name, via app_redirect)."""
+    if not channel:
+        return None
+    if channel.startswith("http"):
+        return channel
+    if workspace:
+        return f"{workspace.rstrip('/')}/app_redirect?channel={channel}"
+    return None
+
+
 class Site(BaseModel):
     """Who the catalog belongs to (site.yaml in the data repo). All optional."""
 
@@ -207,6 +245,7 @@ class Site(BaseModel):
     institution: OptStr = None
     city: OptStr = None
     website: OptStr = None
+    slack_workspace: OptStr = None  # e.g. https://cogneuro-uit.slack.com
     contact: OptStr = None
     logo: OptStr = None
     favicon: OptStr = None

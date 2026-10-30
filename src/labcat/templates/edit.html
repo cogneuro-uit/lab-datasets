@@ -7,7 +7,7 @@
 {% import "_form_rows.html" as rows with context %}
 {% set steps = [
   ("basics", "Basics", "file-text", "Name the dataset and say who to ask about it."),
-  ("people", "People & time", "users", "Who worked on it, and when was the data collected?"),
+  ("people", "People & time", "users", "Who worked on it, where is it discussed, and when was the data collected?"),
   ("content", "What's in it", "flask-conical", "What kind of data is it, and from whom?"),
   ("locations", "Where it's stored", "hard-drive", "Where can the data and its backups be found?"),
   ("legal", "Ethics & sharing", "scale", "Approvals, consent and who may get the data."),
@@ -129,6 +129,16 @@
         <button type="button" class="btn btn-ghost" data-add-person="contributors">{{ icon("user-plus") }} <span>New person</span></button>
       </div>
       {% endcall %}
+      {% call field("slack.channel", "Slack channel", errors, hint="The main channel where this dataset is discussed. Type the name, or paste the channel link (in Slack: click the channel name → Copy link).") %}
+      <div class="input-prefix"><span>#</span>
+        <input id="f-slack-channel" name="slack.channel" type="text" value="{{ get(v, 'slack.channel', '') }}" placeholder="e.g. rlmw-project" spellcheck="false" autocomplete="off">
+      </div>
+      {% endcall %}
+      <div class="field">
+        <span class="label">Slack canvases</span>
+        {{ rows.repeater("canvases", get(v, 'slack.canvases', []), "Add a canvas", rows.canvas_row) }}
+        <p class="hint">Canvases with plans, notes or documentation. In Slack: open the canvas → ⋯ → Copy link.</p>
+      </div>
       <div class="field-row">
         {% call field("collected.start", "Data collection started", errors, hint="Year, or year-month (2019-02).") %}
         <input id="f-collected-start" name="collected.start" type="text" inputmode="numeric" pattern="\d{4}(-\d{2}(-\d{2})?)?" placeholder="2019-02" value="{{ get(v, 'collected.start', '') }}">

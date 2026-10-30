@@ -23,7 +23,7 @@ from markupsafe import Markup
 from . import completeness, doi, forms, skill, yamlio
 from .config import Settings, load_settings
 from .gitrepo import GitRepo
-from .models import ID_PATTERN, LOCATION_KINDS, SHARING, STATUSES, Dataset, Person
+from .models import ID_PATTERN, LOCATION_KINDS, SHARING, STATUSES, Dataset, Person, slack_channel_url
 from .store import Catalog, Conflict, StoreError
 
 log = logging.getLogger(__name__)
@@ -66,6 +66,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         SHARING=SHARING,
         LOCATION_KINDS=LOCATION_KINDS,
         get=forms.get,
+        slack_channel_url=slack_channel_url,
         cat=cat,
     )
     env.filters["markdown"] = lambda s: Markup(md.render(s or ""))
@@ -157,6 +158,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "paradigm": ds.content.paradigm or "",
             "population": ds.content.population or "",
             "sharing": ds.legal.sharing,
+            "channel": ds.slack.channel or "",
             "locations": sorted({loc.kind for loc in ds.locations}),
             "hasBackup": any(loc.is_backup for loc in ds.locations),
             "outputs": len(ds.outputs.publications) + len(ds.outputs.preprints),
@@ -412,12 +414,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def export_csv():
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(["id", "title", "status", "year", "contact", "modalities", "n_participants", "tags", "sharing", "locations"])
+        w.writerow(["id", "title", "status", "year", "contact", "modalities", "n_participants", "tags", "sharing", "slack_channel", "locations"])
         for ds in sorted(cat.datasets.values(), key=lambda d: d.id):
             w.writerow([
                 ds.id, ds.title, ds.status, ds.year, cat.person_name(ds.contact),
                 "; ".join(ds.content.modalities), ds.content.n_participants or "",
-                "; ".join(ds.content.tags), ds.legal.sharing or "",
+                "; ".join(ds.content.tags), ds.legal.sharing or "", ds.slack.channel or "",
                 "; ".join(f"{loc.kind}: {loc.target()}" for loc in ds.locations),
             ])
         return Response(buf.getvalue(), media_type="text/csv",

@@ -36,7 +36,8 @@ must be added in the web app (People page) before the file can be imported.
    Skip what you already know. Everything except section A is optional, so accept "don't
    know" or "later" and move on.
    - **A. Basics (required):** title; contact person; status; year the study started.
-   - **B. People and time:** other contributors; when data collection started and ended.
+   - **B. People, discussion and time:** other contributors; the main Slack channel where the
+     dataset is discussed; links to Slack canvases (plans, notes); when data collection started and ended.
    - **C. Content:** modalities; number of participants; population; task/paradigm; tags.
    - **D. Storage:** every place a copy lives (Teams/SharePoint link, server path, OSF, …),
      with a short note, and which copies are backups.
@@ -69,6 +70,11 @@ must be added in the web app (People page) before the file can be imported.
 - `contact` and `contributors`: person **ids** from `reference/people.yaml`, never names.
   Match names the user gives you to ids, and ask if a match is unclear (several people with
   the same first name, nicknames). Do not list the contact again as a contributor.
+- `slack.channel`: the channel **name without `#`**, lowercase, e.g. `rlmw-project` (in YAML a
+  `#` starts a comment, so `channel: #rlmw` would be read as empty). A link copied from Slack
+  (`https://….slack.com/archives/…`) is also accepted.
+- `slack.canvases`: a list of items with `url` (the canvas link from Slack: ⋯ → Copy link) and
+  an optional `title` such as "Analysis plan".
 - `collected.start` / `collected.end`: `2019`, `2019-02` or `2019-02-15`. Leave `end` out
   while collection is ongoing.
 - `content.modalities`: ids from `reference/modalities.yaml` only.

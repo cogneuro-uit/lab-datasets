@@ -72,6 +72,8 @@ def parse_dataset_form(items: list[tuple[str, str]]) -> dict:
             loc["url" if URL_RE.match(target) else "path"] = target
         locs.append(loc)
     data["locations"] = locs
+    slack = data.setdefault("slack", {})
+    slack["canvases"] = [x for x in slack.get("canvases", []) if not _empty(x)]
     outputs = data.setdefault("outputs", {})
     for key in ("publications", "preprints", "code"):
         outputs[key] = [x for x in outputs.get(key, []) if not _empty(x)]

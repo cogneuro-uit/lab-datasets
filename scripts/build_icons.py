@@ -15,7 +15,7 @@ chevron-down chevron-left chevron-right circle-check circle-help clipboard-paste
 clock cloud code copy database download external-link eye file-code file-plus
 file-text file-up filter flask-conical folder git-commit-horizontal globe
 hard-drive history house info layers layout-grid link list lock lock-open
-menu moon notebook-pen pencil plus rotate-ccw save scale search server
+menu message-square moon notebook-pen pencil plus rotate-ccw save scale search server
 shield-check sliders-horizontal sparkles sticky-note sun tag tags trash-2
 triangle-alert undo-2 upload user user-plus users wand-sparkles x zap
 """.split()

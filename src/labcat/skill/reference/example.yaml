@@ -7,6 +7,11 @@ summary: >
   thought probes every 30–60 seconds.
 contact: matthias
 contributors: [matthias]
+slack:
+  channel: eeg-attention
+  canvases:
+    - url: https://cogneuro-uit.slack.com/docs/T00000000/F00000000
+      title: Analysis plan
 collected: {start: 2019-02, end: 2019-11}
 content:
   modalities: [eeg, eye-tracking, behaviour]

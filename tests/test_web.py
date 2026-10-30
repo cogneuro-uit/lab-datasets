@@ -66,3 +66,19 @@ def test_site_branding(client, repo):
     assert "<title>About · Test datasets</title>" in page and "Test Group" in page
     assert client.get("/brand/logo").content == b"\x89PNG fake"
     assert client.get("/brand/../people.yaml").status_code == 404
+
+
+def test_slack_channel_and_canvases(client, repo):
+    (repo / "site.yaml").write_text("name: G\nslack_workspace: https://lab.slack.com\n")
+    form = {
+        "_mode": "quick", "title": "Slack study", "id": "2024-slack-study", "contact": "matthias",
+        "slack.channel": "#Slack-Study", "slack.canvases.0.url": "https://lab.slack.com/docs/T1/F1",
+        "slack.canvases.0.title": "Plan", "slack.canvases.3.url": "", "slack.canvases.3.title": "",
+    }
+    assert client.post("/new", data=form).status_code == 303
+    text = (repo / "datasets/2024-slack-study.yaml").read_text()
+    assert "channel: slack-study" in text and "title: Plan" in text and text.count("url:") == 1
+    page = client.get("/d/2024-slack-study").text
+    assert "https://lab.slack.com/app_redirect?channel=slack-study" in page and "#slack-study" in page
+    bad = client.post("/new", data=form | {"_mode": "wizard", "id": "2024-slack-two", "slack.channel": "not a channel"})
+    assert bad.status_code == 422 and "use the channel name" in bad.text

@@ -11,7 +11,7 @@
 
   // ---- search index ----
   const mini = new MiniSearch({
-    fields: ["title", "summary", "tagsText", "paradigm", "population", "modalityLabels", "people", "id"],
+    fields: ["title", "summary", "tagsText", "paradigm", "population", "modalityLabels", "people", "id", "channel"],
     extractField: (doc, f) => (f === "tagsText" ? doc.tags.join(" ") : doc[f]),
     searchOptions: { boost: { title: 3, tagsText: 2, id: 2, modalityLabels: 2 }, prefix: true, fuzzy: 0.2, combineWith: "AND" },
   });

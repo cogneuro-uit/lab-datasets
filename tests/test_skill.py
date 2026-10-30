@@ -47,3 +47,10 @@ def test_validator_rejects_bad_file(skill_dir, tmp_path):
     assert r.returncode == 1
     for msg in ("unknown person id 'ghost'", "'done' is not allowed", "foo: unknown field"):
         assert msg in r.stdout
+
+
+def test_validator_catches_hash_channel(skill_dir, tmp_path):
+    f = tmp_path / "2024-y.yaml"
+    f.write_text("id: 2024-y\ntitle: Something\ncontact: matthias\nslack:\n  channel: #rlmw\n")
+    r = validate(skill_dir, f)
+    assert r.returncode == 1 and "write the name without #" in r.stdout
