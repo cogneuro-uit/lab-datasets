@@ -1,4 +1,4 @@
-# systemd user service: keeps the catalog running at http://localhost:8000
+# systemd user service: keeps the catalog running at http://localhost:8420
 #   cp deploy/labcat.service ~/.config/systemd/user/
 #   systemctl --user daemon-reload && systemctl --user enable --now labcat
 [Unit]
@@ -6,7 +6,7 @@ Description=Lab dataset catalog
 
 [Service]
 WorkingDirectory=%h/Nextcloud/work/prog/lab-datasets
-ExecStart=%h/.local/bin/uv run labcat serve --port 8000
+ExecStart=%h/.local/bin/uv run labcat serve --port 8420
 Restart=on-failure
 
 [Install]

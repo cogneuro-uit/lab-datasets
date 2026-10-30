@@ -20,7 +20,7 @@ Every save in the web app is a commit in `data/`, authored by the person who mad
 
 ```bash
 uv run labcat init      # once: creates data/ (already done)
-uv run labcat serve     # http://localhost:8000
+uv run labcat serve     # http://localhost:8420
 ```
 
 Other commands: `labcat validate` (check all YAML files), `labcat schema` (regenerate

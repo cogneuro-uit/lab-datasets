@@ -26,7 +26,7 @@ def main(argv: list[str] | None = None) -> None:
 
     p = sub.add_parser("serve", help="run the web app")
     p.add_argument("--host", default="127.0.0.1")
-    p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--port", type=int, default=8420)
     p.add_argument("--reload", action="store_true", help="restart on code changes (development)")
 
     sub.add_parser("validate", help="check all dataset files")
