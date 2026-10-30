@@ -91,7 +91,7 @@ class Period(Model):
 
 class Content(Model):
     modalities: list[str] = []
-    n_participants: Annotated[int | None, BeforeValidator(_blank_to_none), Field(ge=0)] = None
+    n_participants: Annotated[Annotated[int, Field(ge=0)] | None, BeforeValidator(_blank_to_none)] = None
     population: OptStr = None
     paradigm: OptStr = None
     tags: list[str] = []

@@ -181,7 +181,11 @@ class Catalog:
         try:
             ds = Dataset.model_validate(data)
         except ValidationError as e:
-            raise StoreError("Some fields need attention.", validation_errors(e)) from e
+            errors = validation_errors(e)
+            contact = data.get("contact")
+            if contact and not self.person(contact):
+                errors.setdefault("contact", f"unknown person '{contact}'")
+            raise StoreError("Some fields need attention.", errors) from e
         errors = self.check_refs(ds)
         if errors:
             raise StoreError("Some fields need attention.", errors)
