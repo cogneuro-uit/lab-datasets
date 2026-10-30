@@ -187,6 +187,7 @@ class Person(Model):
     email: OptStr = None
     orcid: OptStr = None
     slack_id: OptStr = None
+    slack_handle: OptStr = None
     active: bool = True
 
 
