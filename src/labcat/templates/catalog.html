@@ -77,6 +77,6 @@
 {% block scripts %}
 {% if index %}
 <script src="/static/vendor/minisearch-7.2.0.js"></script>
-<script src="/static/catalog.js"></script>
+<script src="{{ static_url('catalog.js') }}"></script>
 {% endif %}
 {% endblock %}

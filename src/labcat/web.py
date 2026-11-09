@@ -62,7 +62,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     templates = Jinja2Templates(directory=HERE / "templates")
     env = templates.env
 
+    def static_url(name: str) -> str:
+        """Link to a static file with its modification time, so browsers fetch new versions."""
+        return f"/static/{name}?v={int((HERE / 'static' / name).stat().st_mtime)}"
+
     env.globals.update(
+        static_url=static_url,
         STATUSES=STATUSES,
         SHARING=SHARING,
         LOCATION_KINDS=LOCATION_KINDS,

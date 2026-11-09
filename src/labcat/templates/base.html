@@ -10,9 +10,9 @@
     try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
   </script>
   {% if site.favicon or site.logo %}<link rel="icon" href="/brand/favicon">{% else %}<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230077a8' stroke-width='2' stroke-linecap='round'><ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M3 5v14a9 3 0 0 0 18 0V5'/><path d='M3 12a9 3 0 0 0 18 0'/></svg>">{% endif %}
-  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="{{ static_url('app.css') }}">
   <script src="/static/vendor/htmx-2.0.11.min.js" defer></script>
-  <script src="/static/app.js" defer></script>
+  <script src="{{ static_url('app.js') }}" defer></script>
   {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
