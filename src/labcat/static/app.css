@@ -720,3 +720,7 @@ a.avatar:hover { text-decoration: none; filter: brightness(0.97); }
 .collab-list .small { margin-left: auto; }
 .changes-feed.compact .feed-item { padding: 8px 0; font-size: 0.9rem; }
 .changes-feed.compact .feed-item:last-child { border-bottom: 0; }
+
+.sync-warning { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 7px 16px; font-size: 0.85rem;
+                background: var(--warn-soft); color: var(--text); border-bottom: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
+.sync-warning .icon { color: var(--warn); flex: none; }

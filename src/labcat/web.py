@@ -60,6 +60,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     cat.refresh()
 
     app = FastAPI(title="labcat", docs_url=None, redoc_url=None)
+    app.state.cat = cat
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     templates = Jinja2Templates(directory=HERE / "templates")
     env = templates.env
@@ -99,6 +100,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             {
                 "user": current_user(request),
                 "auth_enabled": settings.auth_enabled,
+                "sync_error": cat.sync_error,
                 "user_picture": request.session.get("picture") if settings.auth_enabled else None,
                 "flash": unquote(flash) if flash else None,
                 "open_todo_count": sum(len(d.open_todos) for d in cat.datasets.values() if d.status != "retired"),
@@ -171,11 +173,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             while True:
                 time.sleep(settings.pull_interval)
                 try:
-                    with cat.lock:
-                        git.pull()
-                        cat.refresh()
+                    cat.sync()
                 except Exception as e:  # noqa: BLE001
-                    log.error("background pull failed: %s", e)
+                    log.error("background sync failed: %s", e)
 
         threading.Thread(target=pull_loop, daemon=True).start()
 

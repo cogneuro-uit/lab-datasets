@@ -63,6 +63,11 @@
     </div>
   </header>
 
+  {% if sync_error and user %}
+  <div class="sync-warning" role="status" title="{{ sync_error }}">
+    {{ icon("triangle-alert") }}<span><strong>Not in sync with GitHub.</strong> Changes are saved here and will be uploaded once it works again. If this stays, please tell an admin.</span>
+  </div>
+  {% endif %}
   {% if flash %}
   <div class="flash" role="status" data-flash>
     {{ icon("circle-check") }}<span>{{ flash }}</span>
