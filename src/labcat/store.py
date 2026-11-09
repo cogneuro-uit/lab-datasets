@@ -165,6 +165,14 @@ class Catalog:
     def person(self, pid: str | None) -> Person | None:
         return next((p for p in self.people if p.id == pid), None)
 
+    def author_of(self, commit: Commit) -> Person | None:
+        """The person who made a commit (by email, the app's no-reply address, or name)."""
+        email = commit.author_email.lower()
+        for p in self.people:
+            if (p.email and p.email.lower() == email) or email == f"{p.id}@users.noreply.lab":
+                return p
+        return next((p for p in self.people if p.name == commit.author_name), None)
+
     def person_name(self, pid: str | None) -> str:
         p = self.person(pid)
         return p.name if p else (pid or "")

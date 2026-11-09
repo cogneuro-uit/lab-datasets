@@ -426,6 +426,37 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 counts[pid] = counts.get(pid, 0) + 1
         return render(request, "people.html", counts=counts, errors={}, v={})
 
+    @app.get("/people/{person_id}", response_class=HTMLResponse)
+    def profile(request: Request, person_id: str):
+        p = cat.person(person_id)
+        if p is None:
+            raise HTTPException(404)
+        active = [d for d in cat.datasets.values() if d.status != "retired"]
+        by_year = lambda d: (d.year or 0, d.id)  # noqa: E731
+        contact = sorted((d for d in active if d.contact == p.id), key=by_year, reverse=True)
+        contributor = sorted((d for d in active if d.contact != p.id and p.id in d.contributors), key=by_year, reverse=True)
+        todo_groups = []
+        for d in sorted(active, key=lambda d: d.id, reverse=True):
+            items = [(i, t) for i, t in enumerate(d.todos) if t.assignee == p.id and not t.done]
+            if items:
+                todo_groups.append((d, items))
+        # Open to-dos nobody has taken on yet, in datasets this person is contact for.
+        unassigned = [
+            (d, [(i, t) for i, t in enumerate(d.todos) if not t.assignee and not t.done]) for d in contact
+        ]
+        unassigned = [(d, items) for d, items in unassigned if items]
+        edits = [(c, ids) for c, ids in cat.recent(400) if (a := cat.author_of(c)) and a.id == p.id][:12]
+        collaborators: dict[str, int] = {}
+        for d in [*contact, *contributor]:
+            for q in {d.contact, *d.contributors} - {p.id}:
+                collaborators[q] = collaborators.get(q, 0) + 1
+        top = sorted(collaborators.items(), key=lambda kv: (-kv[1], cat.person_name(kv[0])))[:8]
+        return render(
+            request, "profile.html", p=p, contact=contact, contributor=contributor, todo_groups=todo_groups,
+            unassigned=unassigned, edits=edits, collaborators=top,
+            n_todos=sum(len(items) for _, items in todo_groups),
+        )
+
     @app.post("/people")
     async def add_person(request: Request):
         form = await request.form()

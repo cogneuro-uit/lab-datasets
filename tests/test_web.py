@@ -115,3 +115,20 @@ def test_todos_page(client):
     assert r.json() == {"done": True}
     assert "Mine" not in client.get("/todos").text and "Mine" in client.get("/todos?done=1").text
     assert client.post("/d/2024-todo-page/todos/0", headers={"X-Requested-With": "fetch"}).json() == {"done": False}
+
+
+def test_profile_page(client):
+    client.post("/people", data={"name": "Ada Lovelace", "id": "ada"})
+    form = {
+        "_mode": "quick", "title": "Profile study", "id": "2024-profile", "contact": "matthias",
+        "todos.0.text": "Ada's job", "todos.0.assignee": "ada", "todos.1.text": "Free for all",
+    }
+    assert client.post("/new", data=form).status_code == 303
+    client.post("/d/2024-profile/edit", data=form | {"_mode": "edit", "contributors": "ada"})
+    ada = client.get("/people/ada").text
+    assert "Ada&#39;s job" in ada and "Free for all" not in ada and "Contributor to" in ada and "Profile study" in ada
+    me = client.get("/people/matthias").text
+    assert "Contact person for" in me and "1 unassigned" in me and 'href="/people/ada"' in me
+    assert "Recent edits" in me and "Profile study" in me
+    assert 'href="/people/matthias"' in client.get("/d/2024-profile").text
+    assert client.get("/people/nobody").status_code == 404

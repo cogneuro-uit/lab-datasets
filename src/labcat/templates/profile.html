@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, status_badge, todo_item, person_link, initials, feed_item with context %}
+{% block title %}{{ p.name }}{% endblock %}
+
+{% macro ds_row(d, role=None) -%}
+<li class="pds">
+  <a class="pds-title" href="/d/{{ d.id }}">{{ d.title }}</a>
+  <div class="pds-meta small muted">
+    {{ status_badge(d.status) }}
+    <span>{{ d.year }}</span>
+    {% if d.content.modalities %}<span>· {% for m in d.content.modalities %}{{ cat.modality_label(m) }}{{ ", " if not loop.last }}{% endfor %}</span>{% endif %}
+    {% if role %}<span>· {{ role }}</span>{% endif %}
+    {% if d.open_todos %}<span class="todo-badge">· {{ icon("circle-check") }} {{ d.open_todos|length }} to-do{{ "s" if d.open_todos|length > 1 }}</span>{% endif %}
+  </div>
+</li>
+{%- endmacro %}
+
+{% block content %}
+<nav class="crumbs"><a href="/people">{{ icon("arrow-left") }} All people</a></nav>
+
+<header class="profile-head card">
+  {% if user and user.id == p.id and user_picture %}
+  <img class="avatar avatar-xl avatar-img" src="{{ user_picture }}" alt="" width="84" height="84" referrerpolicy="no-referrer">
+  {% else %}<span class="avatar avatar-xl">{{ initials(p.name) }}</span>{% endif %}
+  <div class="profile-main">
+    <h1>{{ p.name }}{% if not p.active %} <span class="pill">alumni</span>{% endif %}</h1>
+    <p class="profile-links small">
+      <span class="mono muted">{{ p.id }}</span>
+      {% if p.email %}<a href="mailto:{{ p.email }}">{{ icon("at-sign") }} {{ p.email }}</a>{% endif %}
+      {% if p.slack_id and cat.site.slack_workspace %}
+      <a href="{{ cat.site.slack_workspace.rstrip('/') }}/team/{{ p.slack_id }}" target="_blank" rel="noopener">{{ icon("message-square") }} {% if p.slack_handle %}@{{ p.slack_handle }}{% else %}Slack{% endif %}</a>
+      {% elif p.slack_handle %}<span>{{ icon("message-square") }} @{{ p.slack_handle }}</span>{% endif %}
+      {% if p.orcid %}<a href="https://orcid.org/{{ p.orcid }}" target="_blank" rel="noopener">{{ icon("external-link") }} ORCID</a>{% endif %}
+    </p>
+    <div class="profile-stats">
+      <a href="#datasets"><strong>{{ contact|length }}</strong> contact for</a>
+      <a href="#datasets"><strong>{{ contributor|length }}</strong> contributing to</a>
+      <a href="#todos" class="{{ 'has-todos' if n_todos }}"><strong>{{ n_todos }}</strong> open to-do{{ "s" if n_todos != 1 }}</a>
+    </div>
+  </div>
+</header>
+
+<div class="ds-layout">
+  <div class="ds-main">
+    <section class="card todos {% if n_todos %}has-open{% endif %}" id="todos">
+      <h2 class="card-title">{{ icon("circle-check") }} To-dos
+        {% if n_todos %}<span class="todo-count">{{ n_todos }} open</span>{% endif %}
+        <a class="card-title-link small" href="/todos?person={{ p.id }}">All, including done</a></h2>
+      {% for d, items in todo_groups %}
+      <h3 class="sub todo-ds"><a href="/d/{{ d.id }}#todos">{{ d.title }}</a></h3>
+      <ul class="todo-list">{% for i, t in items %}{{ todo_item(d.id, t, i, show_assignee=False) }}{% endfor %}</ul>
+      {% else %}
+      <p class="muted empty-line">Nothing assigned{{ " right now" if p.active }}.</p>
+      {% endfor %}
+      {% if unassigned %}
+      <details class="todo-done unassigned">
+        <summary class="small muted">{{ unassigned|map("last")|map("length")|sum }} unassigned in {{ "their" if not user or user.id != p.id else "your" }} datasets</summary>
+        {% for d, items in unassigned %}
+        <h3 class="sub todo-ds"><a href="/d/{{ d.id }}#todos">{{ d.title }}</a></h3>
+        <ul class="todo-list">{% for i, t in items %}{{ todo_item(d.id, t, i) }}{% endfor %}</ul>
+        {% endfor %}
+      </details>
+      {% endif %}
+    </section>
+
+    <section class="card" id="datasets">
+      <h2 class="card-title">{{ icon("database") }} Datasets</h2>
+      {% if contact %}
+      <h3 class="sub">Contact person for</h3>
+      <ul class="pds-list">{% for d in contact %}{{ ds_row(d) }}{% endfor %}</ul>
+      {% endif %}
+      {% if contributor %}
+      <h3 class="sub">Contributor to</h3>
+      <ul class="pds-list">{% for d in contributor %}{{ ds_row(d, "contact: " ~ cat.person_name(d.contact)) }}{% endfor %}</ul>
+      {% endif %}
+      {% if not contact and not contributor %}
+      <p class="muted empty-line">Not part of any dataset yet.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="ds-side">
+    {% if collaborators %}
+    <section class="card">
+      <h2 class="card-title">{{ icon("users") }} Works with</h2>
+      <ul class="plain-list collab-list">
+        {% for q, n in collaborators %}
+        <li><span class="avatar avatar-sm">{{ initials(cat.person_name(q)) }}</span>{{ person_link(q) }}
+          <span class="small muted">{{ n }} dataset{{ "s" if n != 1 }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <section class="card">
+      <h2 class="card-title">{{ icon("history") }} Recent edits</h2>
+      {% if edits %}
+      <div class="changes-feed compact">{% for c, ids in edits %}{{ feed_item(c, ids, show_author=False) }}{% endfor %}</div>
+      {% else %}
+      <p class="muted empty-line small">No edits in the catalog yet.</p>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}
