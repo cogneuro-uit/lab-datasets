@@ -27,6 +27,7 @@
           <span class="brand-sub">{{ site.short_name or site.name }}</span>
         </span>
       </a>
+      {% if user %}
       <nav class="mainnav" aria-label="Main">
         {% set path = request.url.path %}
         <a href="/" {% if path == "/" or path.startswith("/d/") %}aria-current="page"{% endif %}>{{ icon("layout-grid") }}<span>Catalog</span></a>
@@ -40,8 +41,25 @@
         <button class="icon-btn" type="button" id="theme-toggle" title="Switch light / dark theme" aria-label="Switch light / dark theme">
           <span class="when-light">{{ icon("moon") }}</span><span class="when-dark">{{ icon("sun") }}</span>
         </button>
-        <span class="avatar" title="Signed in as {{ user.name }} (no login yet)">{{ user.name.split()|map("first")|join("")|upper }}</span>
+        {% set initials = user.name.split()|map("first")|join("")|upper %}
+        {% if auth_enabled %}
+        <details class="menu user-menu">
+          <summary class="avatar-btn" aria-label="Account: {{ user.name }}" title="Signed in as {{ user.name }}">
+            {% if user_picture %}<img class="avatar avatar-img" src="{{ user_picture }}" alt="" width="32" height="32" referrerpolicy="no-referrer">
+            {% else %}<span class="avatar">{{ initials }}</span>{% endif %}
+          </summary>
+          <div class="menu-pop">
+            <div class="menu-who"><strong>{{ user.name }}</strong><span class="small muted mono">{{ user.id }}</span></div>
+            <a href="/todos?person={{ user.id }}">{{ icon("circle-check") }} My to-dos</a>
+            <a href="/?person={{ user.id }}">{{ icon("database") }} My datasets</a>
+            <form method="post" action="/logout"><button type="submit">{{ icon("arrow-right") }} Sign out</button></form>
+          </div>
+        </details>
+        {% else %}
+        <span class="avatar" title="Signed in as {{ user.name }} (development mode: no Slack login configured)">{{ initials }}</span>
+        {% endif %}
       </div>
+      {% endif %}
     </div>
   </header>
 

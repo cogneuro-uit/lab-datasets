@@ -8,6 +8,7 @@ import io
 import json
 import logging
 import re
+import secrets
 import threading
 import time
 from pathlib import Path
@@ -17,10 +18,11 @@ from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 from markdown_it import MarkdownIt
 from markupsafe import Markup
 
-from . import completeness, doi, forms, skill, yamlio
+from . import auth, completeness, doi, forms, skill, yamlio
 from .config import Settings, load_settings
 from .gitrepo import GitRepo
 from .models import ID_PATTERN, LOCATION_KINDS, SHARING, STATUSES, Dataset, Person, slack_channel_url
@@ -80,7 +82,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     env.filters["date"] = lambda iso: dt.datetime.fromisoformat(iso).strftime("%-d %b %Y, %H:%M")
     env.filters["tojson_attr"] = lambda v: json.dumps(v, ensure_ascii=False)
 
-    def current_user() -> Person:
+    def current_user(request: Request) -> Person | None:
+        """The signed-in person (or LABCAT_USER when Slack login is off)."""
+        if settings.auth_enabled:
+            return cat.person(request.session.get("user"))
         p = cat.person(settings.user)
         if p is None:
             raise HTTPException(500, f"User '{settings.user}' is not in people.yaml")
@@ -92,7 +97,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             request,
             name,
             {
-                "user": current_user(),
+                "user": current_user(request),
+                "auth_enabled": settings.auth_enabled,
+                "user_picture": request.session.get("picture") if settings.auth_enabled else None,
                 "flash": unquote(flash) if flash else None,
                 "open_todo_count": sum(len(d.open_todos) for d in cat.datasets.values() if d.status != "retired"),
                 **ctx,
@@ -135,6 +142,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if not request.url.path.startswith("/static"):
             cat.refresh()
         return await call_next(request)
+
+    if settings.auth_enabled:
+
+        @app.middleware("http")
+        async def require_login(request: Request, call_next):
+            if not auth.is_public(request.url.path) and not cat.person(request.session.get("user")):
+                return auth.login_required_response(request)
+            return await call_next(request)
+
+    # Added last, so it runs first: the login check above needs the session.
+    secret_key = settings.secret_key or secrets.token_urlsafe(32)
+    if settings.auth_enabled and not settings.secret_key:
+        log.warning("LABCAT_SECRET_KEY is not set; everyone has to sign in again after a restart.")
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=secret_key,
+        session_cookie="labcat_session",
+        max_age=30 * 24 * 3600,
+        same_site="lax",
+        https_only=bool(settings.base_url and settings.base_url.startswith("https")),
+    )
+    app.include_router(auth.make_router(settings, cat, render, redirect))
 
     if git.has_remote():
 
@@ -222,19 +251,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return render(request, "history.html", ds=ds, entries=cat.history(dataset_id))
 
     @app.post("/d/{dataset_id}/restore/{rev}")
-    def restore(dataset_id: str, rev: str):
+    def restore(request: Request, dataset_id: str, rev: str):
         get_ds(dataset_id)
         if not re.fullmatch(r"[0-9a-f]{7,40}", rev):
             raise HTTPException(400)
-        cat.restore(dataset_id, rev, current_user())
+        cat.restore(dataset_id, rev, current_user(request))
         return redirect(f"/d/{dataset_id}", f"Restored the version from {rev[:7]}. The old state is kept in the history.")
 
     @app.post("/d/{dataset_id}/status")
-    def change_status(dataset_id: str, status: str = Form(...)):
+    def change_status(request: Request, dataset_id: str, status: str = Form(...)):
         get_ds(dataset_id)
         if status not in STATUSES:
             raise HTTPException(400)
-        cat.set_status(dataset_id, status, current_user())
+        cat.set_status(dataset_id, status, current_user(request))
         msg = "Dataset retired. It is hidden from the catalog but kept, with its history." if status == "retired" else "Dataset is active again."
         return redirect(f"/d/{dataset_id}", msg)
 
@@ -242,7 +271,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def toggle_todo(request: Request, dataset_id: str, index: int, done: bool = Form(False)):
         if not 0 <= index < len(get_ds(dataset_id).todos):
             raise HTTPException(404)
-        cat.set_todo_done(dataset_id, index, done, current_user())
+        cat.set_todo_done(dataset_id, index, done, current_user(request))
         if request.headers.get("x-requested-with") == "fetch":
             return JSONResponse({"done": done})
         return redirect(f"/d/{dataset_id}#todos", "To-do ticked off." if done else "To-do reopened.")
@@ -300,7 +329,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         base_sha = form.get("_base_sha") or None
         prefer_mine = form.get("_resolve") == "mine"
         try:
-            res = cat.save_dataset(data, current_user(), base_sha=base_sha, prefer_mine=prefer_mine)
+            res = cat.save_dataset(data, current_user(request), base_sha=base_sha, prefer_mine=prefer_mine)
         except StoreError as e:
             return form_page(request, "edit", data, e.errors, str(e), base_sha, 422, ds=ds)
         except Conflict as c:
@@ -335,7 +364,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if not data.get("id") and data.get("title"):
             data["id"] = f"{form.get('_year') or dt.date.today().year}-{slugify(data['title'])}"
         try:
-            res = cat.save_dataset(data, current_user(), create=True)
+            res = cat.save_dataset(data, current_user(request), create=True)
         except StoreError as e:
             return form_page(request, mode, data, e.errors, str(e), status_code=422)
         msg = "Dataset created."
@@ -377,7 +406,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         result = check_yaml(text)
         if not result["ok"]:
             return render(request, "import.html", status_code=422, text=text, result=result)
-        res = cat.save_dataset(result["ds"].to_yaml_data(), current_user(), create=True)
+        res = cat.save_dataset(result["ds"].to_yaml_data(), current_user(request), create=True)
         return redirect(f"/d/{res.dataset.id}", "Dataset imported.")
 
     async def _yaml_text(form) -> str:
@@ -406,7 +435,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             data["id"] = slugify(data["name"], 2).replace("-", "")
         wants_json = "application/json" in request.headers.get("accept", "")
         try:
-            p = cat.add_person(data, current_user())
+            p = cat.add_person(data, current_user(request))
         except StoreError as e:
             if wants_json:
                 return JSONResponse({"error": str(e), "errors": e.errors}, status_code=422)

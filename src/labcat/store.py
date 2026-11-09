@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import logging
 import threading
 from dataclasses import dataclass, field
@@ -35,6 +36,17 @@ DEFAULT_MODALITIES = [
     ("physiology", "Physiology (ECG, EDA, …)"),
     ("other", "Other"),
 ]
+
+
+def person_id_from_name(name: str) -> str:
+    """'Nya Mehnwolo Boayue' -> 'nya-boayue' (first and last name, like the ids in people.yaml)."""
+    name = name.lower()
+    for a, b in (("æ", "ae"), ("ø", "o"), ("å", "a"), ("ä", "a"), ("ö", "o"), ("ü", "u"), ("é", "e"), ("á", "a")):
+        name = name.replace(a, b)
+    words = re.findall(r"[a-z0-9]+", name)
+    words = words[:1] + words[-1:] if len(words) > 1 else words
+    pid = "-".join(words)
+    return pid if re.match(r"^[a-z]", pid) else f"user-{pid}".rstrip("-")
 
 
 class StoreError(Exception):
@@ -326,13 +338,39 @@ class Catalog:
                 raise StoreError("Please check the fields.", validation_errors(e)) from e
             if self.person(person.id):
                 raise StoreError("This ID is already taken.", {"id": "someone already has this ID"})
-            people = [
-                p.model_dump(exclude_defaults=True) | {"active": p.active} for p in [*self.people, person]
-            ]
-            self._write(PEOPLE, yamlio.render(people, self._read(PEOPLE)))
+            self._save_people([*self.people, person])
             self._commit([PEOPLE], f"Add person {person.id}: {person.name}", author)
             self.refresh()
             return person
+
+    def person_for_slack(self, slack_id: str, name: str, email: str | None) -> Person:
+        """The person who signed in with Slack: matched by Slack ID, then by email, else added."""
+        with self.lock:
+            self.refresh()
+            p = next((x for x in self.people if x.slack_id == slack_id), None)
+            if p:
+                return p
+            if email:
+                p = next((x for x in self.people if x.email and x.email.lower() == email.lower()), None)
+            if p:
+                linked = p.model_copy(update={"slack_id": slack_id})
+                self._save_people([linked if x.id == p.id else x for x in self.people])
+                self._commit([PEOPLE], f"Link {p.id} to their Slack account", linked)
+                self.refresh()
+                return linked
+            base = person_id_from_name(name)
+            pid, n = base, 2
+            while self.person(pid):
+                pid, n = f"{base}{n}", n + 1
+            new = Person(id=pid, name=name, email=email, slack_id=slack_id)
+            self._save_people([*self.people, new])
+            self._commit([PEOPLE], f"Add person {pid}: {name} (first Slack sign-in)", new)
+            self.refresh()
+            return new
+
+    def _save_people(self, people: list[Person]) -> None:
+        data = [p.model_dump(exclude_defaults=True) | {"active": p.active} for p in people]
+        self._write(PEOPLE, yamlio.render(data, self._read(PEOPLE)))
 
     # --- history ---------------------------------------------------------
     def history(self, dataset_id: str) -> list[HistoryEntry]:
