@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, person_link with context %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<div class="form-head">
+  <h1>Admin</h1>
+  <p class="lead">Things only catalog admins need. Admins are set with <span class="mono">LABCAT_ADMINS</span> on the server.</p>
+</div>
+
+<div class="admin-grid">
+  <section class="card">
+    <h2 class="card-title">{{ icon("cloud") }} Sync with GitHub</h2>
+    {% if not remote %}
+    <p class="muted">This catalog has no GitHub remote: changes are only kept on this server.</p>
+    {% else %}
+    <div class="sync-state {{ 'is-bad' if sync_error else 'is-ok' }}">
+      {{ icon("triangle-alert" if sync_error else "circle-check") }}
+      <div>
+        {% if sync_error %}<strong>Not in sync.</strong> <span class="mono small">{{ sync_error }}</span>
+        {% elif unpushed %}<strong>{{ unpushed }} change{{ "s" if unpushed != 1 }} waiting to be uploaded.</strong>
+        {% else %}<strong>In sync.</strong>{% endif %}
+      </div>
+    </div>
+    <dl class="admin-facts">
+      <dt>Repository</dt><dd class="mono small">{{ remote }}</dd>
+      <dt>Last sync</dt><dd>{{ last_sync|ago if last_sync else "not since the app started" }}</dd>
+      <dt>Automatic sync</dt><dd>{% if interval %}every {{ (interval / 60)|round|int if interval >= 60 else interval ~ " s" }}{{ " minutes" if interval >= 60 }}{% else %}off{% endif %}</dd>
+      <dt>Waiting to upload</dt><dd>{{ unpushed }}</dd>
+    </dl>
+    <form method="post" action="/admin/sync">
+      <button class="btn btn-primary" type="submit">{{ icon("rotate-ccw") }} Sync now</button>
+    </form>
+    <p class="hint">Pulls changes pushed directly to GitHub (e.g. hand edits), then uploads anything still waiting. Every save in the app also pulls first.</p>
+    {% if sync_error and "conflict" in sync_error %}
+    <details class="tip">
+      <summary>{{ icon("circle-help") }} How to fix a conflict</summary>
+      <p>On the server, in the catalog's data folder: <span class="mono">git pull --rebase</span>, fix the files git names,
+         <span class="mono">git add</span> them, <span class="mono">git rebase --continue</span>, then <span class="mono">git push</span>. Press <em>Sync now</em> afterwards.</p>
+    </details>
+    {% endif %}
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">{{ icon("users") }} Admins</h2>
+    <ul class="plain-list">
+      {% for a in admins %}<li>{{ icon("user") }} {% if a.id is defined %}{{ person_link(a.id) }}{% else %}{{ a }} <span class="muted small">(not in people.yaml)</span>{% endif %}</li>{% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

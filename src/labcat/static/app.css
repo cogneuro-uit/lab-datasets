@@ -724,3 +724,17 @@ a.avatar:hover { text-decoration: none; filter: brightness(0.97); }
 .sync-warning { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 7px 16px; font-size: 0.85rem;
                 background: var(--warn-soft); color: var(--text); border-bottom: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
 .sync-warning .icon { color: var(--warn); flex: none; }
+
+/* ---------- admin ---------- */
+.admin-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; }
+.admin-grid .card + .card { margin-top: 0; }
+@media (max-width: 760px) { .admin-grid { grid-template-columns: 1fr; } }
+.sync-state { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; }
+.sync-state.is-ok { background: var(--ok-soft); }
+.sync-state.is-ok .icon { color: var(--ok); }
+.sync-state.is-bad { background: var(--warn-soft); }
+.sync-state.is-bad .icon { color: var(--warn); }
+.sync-state .icon { flex: none; margin-top: 2px; }
+.admin-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 14px; }
+.admin-facts dt { color: var(--text-3); font-size: 0.86rem; }
+.admin-facts dd { margin: 0; overflow-wrap: anywhere; }

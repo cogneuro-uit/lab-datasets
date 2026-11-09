@@ -48,3 +48,29 @@ def test_conflict_is_aborted_cleanly(cat, repo, remote, tmp_path, client):
     assert "Not in sync with GitHub" not in client.get("/").text
     client.app.state.cat.sync_error = cat.sync_error
     assert "Not in sync with GitHub" in client.get("/").text
+
+
+def test_admin_page_and_sync_button(repo, remote, tmp_path):
+    from fastapi.testclient import TestClient
+
+    from labcat.config import Settings
+    from labcat.web import create_app
+
+    other = tmp_path / "other"
+    git(tmp_path, "clone", "-q", str(remote), str(other))
+    (other / "datasets/2021-by-hand.yaml").write_text("id: 2021-by-hand\ntitle: Edited by hand\ncontact: matthias\n")
+    git(other, "add", "-A")
+    git(other, "commit", "-qm", "hand edit")
+    git(other, "push", "-q")
+
+    admin = TestClient(create_app(Settings(data_dir=repo, user="matthias", admins=("matthias",), pull_interval=0)),
+                       follow_redirects=False)
+    page = admin.get("/admin").text
+    assert "In sync." in page and str(remote) in page and 'href="/admin"' in page
+    assert admin.get("/d/2021-by-hand").status_code == 404
+    assert admin.post("/admin/sync").headers["location"] == "/admin"
+    assert admin.get("/d/2021-by-hand").status_code == 200
+
+    user = TestClient(create_app(Settings(data_dir=repo, user="matthias")), follow_redirects=False)
+    assert user.get("/admin").status_code == 403 and user.post("/admin/sync").status_code == 403
+    assert 'href="/admin"' not in user.get("/").text

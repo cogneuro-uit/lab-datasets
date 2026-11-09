@@ -92,6 +92,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(500, f"User '{settings.user}' is not in people.yaml")
         return p
 
+    def is_admin(request: Request) -> bool:
+        user = current_user(request)
+        return bool(user and user.id in settings.admins)
+
+    def require_admin(request: Request) -> None:
+        if not is_admin(request):
+            raise HTTPException(403, "Only admins can open this page.")
+
     def render(request: Request, name: str, status_code: int = 200, **ctx) -> HTMLResponse:
         flash = request.cookies.get("flash")
         resp = templates.TemplateResponse(
@@ -101,6 +109,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "user": current_user(request),
                 "auth_enabled": settings.auth_enabled,
                 "sync_error": cat.sync_error,
+                "is_admin": is_admin(request),
                 "user_picture": request.session.get("picture") if settings.auth_enabled else None,
                 "flash": unquote(flash) if flash else None,
                 "open_todo_count": sum(len(d.open_todos) for d in cat.datasets.values() if d.status != "retired"),
@@ -167,7 +176,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(auth.make_router(settings, cat, render, redirect))
 
-    if git.has_remote():
+    if git.has_remote() and settings.pull_interval > 0:
 
         def pull_loop():
             while True:
@@ -480,6 +489,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def changes(request: Request):
         return render(request, "changes.html", commits=cat.recent(100))
 
+    # --- admin -----------------------------------------------------------
+    @app.get("/admin", response_class=HTMLResponse)
+    def admin(request: Request):
+        require_admin(request)
+        return render(
+            request, "admin.html",
+            remote=git.remote_url(), unpushed=git.unpushed() if git.has_remote() else 0,
+            last_sync=cat.last_sync, interval=settings.pull_interval,
+            admins=[cat.person(a) or a for a in settings.admins],
+        )
+
+    @app.post("/admin/sync")
+    def admin_sync(request: Request):
+        require_admin(request)
+        if not git.has_remote():
+            return redirect("/admin", "This catalog has no GitHub remote, so there is nothing to sync.")
+        cat.sync()
+        if cat.sync_error:
+            return redirect("/admin", "Sync failed; see the details below.")
+        return redirect("/admin", "In sync with GitHub.")
+
     # --- small APIs used by the forms ------------------------------------
     @app.get("/api/doi")
     def api_doi(q: str):
@@ -532,6 +562,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def not_found(request: Request, exc):
         return render(request, "error.html", status_code=404, title="Not found",
                       message="This page or dataset does not exist. It may have been renamed.")
+
+    @app.exception_handler(403)
+    async def forbidden(request: Request, exc):
+        return render(request, "error.html", status_code=403, title="Admins only",
+                      message="This page is only for catalog admins.")
 
     return app
 

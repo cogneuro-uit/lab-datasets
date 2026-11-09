@@ -13,8 +13,13 @@ no login (every change is made as `matthias`), no Slack, no server.
 | Catalog data | `data/` (own git repo, ignored by the app repo) | `datasets/*.yaml`, `people.yaml`, `vocab/`, `schema/` |
 
 Every save in the web app is a commit in `data/`, authored by the person who made it
-(committer: "Lab catalog"). Each repo can be pushed to GitHub on its own later; once
-`data/` has a remote, the app pulls before and pushes after each change.
+(committer: "Lab catalog"). The data repo is
+[cogneuro-uit/lab-datasets-data](https://github.com/cogneuro-uit/lab-datasets-data): the
+app pulls before each save, pushes after it, and syncs every 10 minutes
+(`LABCAT_PULL_INTERVAL`). Admins (`LABCAT_ADMINS`) have an *Admin* page with the sync status
+and a *Sync now* button, e.g. after pushing a hand edit. If a sync fails (GitHub unreachable,
+or a conflict with a hand edit), changes stay saved on the server and everyone sees a notice
+until it works again.
 
 ## Quick start
 

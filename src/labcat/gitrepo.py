@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -100,6 +101,11 @@ class GitRepo:
             log.warning("push rejected, rebasing and retrying once")
             self.pull()
             self.run("push", "--quiet")
+
+    def remote_url(self) -> str | None:
+        """The remote's address, without any credentials in it."""
+        url = self.run("remote", "get-url", "origin", check=False).strip()
+        return re.sub(r"//[^/@]+@", "//", url) or None
 
     def rebase_in_progress(self) -> bool:
         git_dir = self.path / ".git"
