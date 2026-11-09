@@ -24,8 +24,27 @@ uv run labcat serve     # http://localhost:8420
 ```
 
 Other commands: `labcat validate` (check all YAML files), `labcat schema` (regenerate
-the JSON schema). Settings: `LABCAT_DATA` (data repo path, default `./data`),
-`LABCAT_USER` (person id edits are attributed to, default `matthias`).
+the JSON schema). Settings come from environment variables or a `.env` file (see
+[.env.example](.env.example)): `LABCAT_DATA` (data repo path, default `./data`),
+`LABCAT_USER` (person id edits are attributed to when Slack login is off, default `matthias`).
+
+## Sign in with Slack
+
+Without Slack credentials the app runs in development mode: no login, every change is
+made as `LABCAT_USER`. With them, everyone must sign in with Slack, and each change is
+committed as the signed-in person. People are matched in `people.yaml` by Slack ID, then
+by email; someone signing in for the first time is added automatically.
+
+1. Create a Slack app at https://api.slack.com/apps → *From a manifest*, with the user
+   scopes `openid`, `profile`, `email` and the redirect URL `<address>/auth/callback`.
+   Slack only accepts **https** redirect URLs.
+2. Copy `.env.example` to `.env` and fill in the client ID and secret, a secret key, and
+   `LABCAT_SLACK_TEAM_ID` (so only the lab's workspace can sign in).
+3. Locally, serve https with a trusted certificate from mkcert:
+   ```bash
+   mkdir -p certs && mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost
+   uv run labcat serve --https     # https://localhost:8420
+   ```
 
 To keep it running in the background, see [deploy/labcat.service](deploy/labcat.service).
 
