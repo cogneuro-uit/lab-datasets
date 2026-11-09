@@ -78,8 +78,18 @@ class GitRepo:
 
     # --- sync ------------------------------------------------------------
     def pull(self) -> None:
-        if self.has_remote():
-            self.run("pull", "--rebase", "--quiet")
+        """Rebase local commits onto the remote. On a conflict, give up cleanly (nothing is lost)."""
+        if not self.has_remote():
+            return
+        try:
+            self.run("pull", "--rebase", "--autostash", "--quiet")
+        except GitError:
+            if self.rebase_in_progress():
+                self.run("rebase", "--abort", check=False)
+                raise GitError(
+                    "changes on GitHub conflict with changes made here; someone needs to merge them by hand"
+                ) from None
+            raise
 
     def push(self) -> None:
         if not self.has_remote():
@@ -88,8 +98,17 @@ class GitRepo:
             self.run("push", "--quiet")
         except GitError:
             log.warning("push rejected, rebasing and retrying once")
-            self.run("pull", "--rebase", "--quiet")
+            self.pull()
             self.run("push", "--quiet")
+
+    def rebase_in_progress(self) -> bool:
+        git_dir = self.path / ".git"
+        return (git_dir / "rebase-merge").exists() or (git_dir / "rebase-apply").exists()
+
+    def unpushed(self) -> int:
+        """Number of local commits not yet on the remote (0 if unknown)."""
+        out = self.run("rev-list", "--count", "@{upstream}..HEAD", check=False).strip()
+        return int(out) if out.isdigit() else 0
 
     # --- writing ---------------------------------------------------------
     def commit(self, paths: list[str], message: str, author_name: str, author_email: str) -> str:

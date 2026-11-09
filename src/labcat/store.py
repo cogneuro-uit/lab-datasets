@@ -103,6 +103,7 @@ class Catalog:
         self.root = Path(root)
         self.git = git
         self.lock = threading.RLock()
+        self.sync_error: str | None = None  # last problem talking to the remote, shown in the UI
         self.datasets: dict[str, Dataset] = {}
         self.shas: dict[str, str] = {}
         self.broken: dict[str, str] = {}  # file name -> problem
@@ -231,11 +232,29 @@ class Catalog:
     def _commit(self, paths: list[str], message: str, author: Person) -> str:
         email = author.email or f"{author.id}@users.noreply.lab"
         sha = self.git.commit(paths, message, author.name, email)
-        try:
-            self.git.push()
-        except Exception as e:  # noqa: BLE001
-            log.error("push failed: %s", e)
+        self._sync_step(self.git.push)
         return sha
+
+    def sync(self) -> None:
+        """Pull changes from the remote and push anything still waiting (runs every minute)."""
+        with self.lock:
+            if self._sync_step(self.git.pull) and self.git.unpushed():
+                self._sync_step(self.git.push)
+            self.refresh()
+
+    def _sync_step(self, step) -> bool:
+        try:
+            step()
+        except Exception as e:  # noqa: BLE001
+            msg = str(e).removeprefix("git ").strip()
+            if msg != self.sync_error:
+                log.error("sync with GitHub failed: %s", msg)
+            self.sync_error = msg
+            return False
+        if self.sync_error:
+            log.info("sync with GitHub works again")
+        self.sync_error = None
+        return True
 
     def _add_tags(self, tags: list[str]) -> list[str]:
         new = sorted({t for t in tags if t not in self.tags})
@@ -254,10 +273,7 @@ class Catalog:
     ) -> SaveResult:
         """Validate and commit a dataset. `base_sha` = blob SHA when the form was loaded."""
         with self.lock:
-            try:
-                self.git.pull()
-            except Exception as e:  # noqa: BLE001
-                log.error("pull failed: %s", e)
+            self._sync_step(self.git.pull)
             self.refresh()
             ds = self.parse(data)
             path = self.path_of(ds.id)
