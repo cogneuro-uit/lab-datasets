@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, status_badge, todo_item with context %}
+{% block title %}To-dos{% endblock %}
+{% block content %}
+<div class="form-head">
+  <h1>To-dos</h1>
+  <p class="lead">What still needs doing, across all datasets. Tick a box when it's done; add new to-dos via <em>Edit</em> on a dataset.</p>
+</div>
+
+{% set total = assignees.values()|sum %}
+<div class="todo-filters">
+  <a class="filter-chip" href="/todos{{ '?done=1' if show_done }}" {% if not person %}aria-current="true"{% endif %}>Everyone <span>{{ total }}</span></a>
+  {% for pid, n in assignees|dictsort if pid != "nobody" %}
+  <a class="filter-chip" href="/todos?person={{ pid }}{{ '&done=1' if show_done }}" {% if person == pid %}aria-current="true"{% endif %}>{{ icon("user") }} {{ cat.person_name(pid) }} <span>{{ n }}</span></a>
+  {% endfor %}
+  {% if assignees.nobody %}
+  <a class="filter-chip" href="/todos?person=nobody{{ '&done=1' if show_done }}" {% if person == "nobody" %}aria-current="true"{% endif %}>Unassigned <span>{{ assignees.nobody }}</span></a>
+  {% endif %}
+  <span class="spacer"></span>
+  <a class="small" href="/todos?{{ 'person=' ~ person ~ '&' if person }}{{ '' if show_done else 'done=1' }}">{{ "Hide done" if show_done else "Show done too" }}</a>
+</div>
+
+{% if groups %}
+<div class="todo-groups">
+  {% for ds, items in groups %}
+  <section class="card todo-group">
+    <h2 class="todo-group-title">
+      <a href="/d/{{ ds.id }}#todos">{{ ds.title }}</a>
+      {{ status_badge(ds.status) }}
+    </h2>
+    <p class="small muted todo-group-meta"><span class="mono">{{ ds.id }}</span> · Contact: {{ cat.person_name(ds.contact) }}</p>
+    <ul class="todo-list">
+      {% for i, t in items %}{{ todo_item(ds.id, t, i) }}{% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</div>
+{% else %}
+<section class="card empty-todos">
+  {{ icon("circle-check") }}
+  <p><strong>Nothing to do{% if person %} here{% endif %}.</strong><br>
+  <span class="muted">{% if person %}<a href="/todos">See everyone's to-dos</a>{% else %}Add to-dos via <em>Edit</em> on a dataset.{% endif %}</span></p>
+</section>
+{% endif %}
+{% endblock %}

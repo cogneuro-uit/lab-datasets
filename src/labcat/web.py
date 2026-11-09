@@ -61,6 +61,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     templates = Jinja2Templates(directory=HERE / "templates")
     env = templates.env
+
     env.globals.update(
         STATUSES=STATUSES,
         SHARING=SHARING,
@@ -85,7 +86,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         resp = templates.TemplateResponse(
             request,
             name,
-            {"user": current_user(), "flash": unquote(flash) if flash else None, **ctx},
+            {
+                "user": current_user(),
+                "flash": unquote(flash) if flash else None,
+                "open_todo_count": sum(len(d.open_todos) for d in cat.datasets.values() if d.status != "retired"),
+                **ctx,
+            },
             status_code=status_code,
         )
         if flash:
@@ -228,11 +234,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return redirect(f"/d/{dataset_id}", msg)
 
     @app.post("/d/{dataset_id}/todos/{index}")
-    def toggle_todo(dataset_id: str, index: int, done: bool = Form(...)):
+    def toggle_todo(request: Request, dataset_id: str, index: int, done: bool = Form(False)):
         if not 0 <= index < len(get_ds(dataset_id).todos):
             raise HTTPException(404)
         cat.set_todo_done(dataset_id, index, done, current_user())
+        if request.headers.get("x-requested-with") == "fetch":
+            return JSONResponse({"done": done})
         return redirect(f"/d/{dataset_id}#todos", "To-do ticked off." if done else "To-do reopened.")
+
+    @app.get("/todos", response_class=HTMLResponse)
+    def todos(request: Request, person: str = "", done: bool = False):
+        groups = []
+        for ds in sorted(cat.datasets.values(), key=lambda d: d.id, reverse=True):
+            if ds.status == "retired":
+                continue
+            items = [
+                (i, t)
+                for i, t in enumerate(ds.todos)
+                if (done or not t.done)
+                and (not person or (t.assignee or "") == (person if person != "nobody" else ""))
+            ]
+            if items:
+                groups.append((ds, items))
+        assignees: dict[str, int] = {}
+        for ds in cat.datasets.values():
+            if ds.status != "retired":
+                for t in ds.open_todos:
+                    key = t.assignee or "nobody"
+                    assignees[key] = assignees.get(key, 0) + 1
+        return render(request, "todos.html", groups=groups, person=person, show_done=done, assignees=assignees)
 
     # --- editing ---------------------------------------------------------
     def form_page(request, mode, values, errors=None, message=None, base_sha=None, status_code=200, ds=None):

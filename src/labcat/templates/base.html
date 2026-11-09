@@ -30,6 +30,7 @@
       <nav class="mainnav" aria-label="Main">
         {% set path = request.url.path %}
         <a href="/" {% if path == "/" or path.startswith("/d/") %}aria-current="page"{% endif %}>{{ icon("layout-grid") }}<span>Catalog</span></a>
+        <a href="/todos" {% if path == "/todos" %}aria-current="page"{% endif %}>{{ icon("circle-check") }}<span>To-dos</span>{% if open_todo_count %}<span class="nav-count" title="{{ open_todo_count }} open to-dos">{{ open_todo_count }}</span>{% endif %}</a>
         <a href="/changes" {% if path == "/changes" %}aria-current="page"{% endif %}>{{ icon("history") }}<span>Recent changes</span></a>
         <a href="/people" {% if path == "/people" %}aria-current="page"{% endif %}>{{ icon("users") }}<span>People</span></a>
         <a href="/about" {% if path == "/about" %}aria-current="page"{% endif %}>{{ icon("info") }}<span>About</span></a>

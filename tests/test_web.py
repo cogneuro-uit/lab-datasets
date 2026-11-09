@@ -99,3 +99,19 @@ def test_todos(client, repo):
     assert client.post("/d/2024-todo-study/todos/5", data={"done": "true"}).status_code == 404
     bad = client.post("/new", data=form | {"_mode": "wizard", "id": "2024-todo-two", "todos.0.assignee": "ghost"})
     assert bad.status_code == 422 and "unknown person &#39;ghost&#39;" in bad.text
+
+
+def test_todos_page(client):
+    form = {
+        "_mode": "quick", "title": "Todo page", "id": "2024-todo-page", "contact": "matthias",
+        "todos.0.text": "Mine", "todos.0.assignee": "matthias", "todos.1.text": "Nobody's",
+    }
+    assert client.post("/new", data=form).status_code == 303
+    page = client.get("/todos").text
+    assert "Mine" in page and "Nobody&#39;s" in page and 'class="nav-count"' in page
+    mine = client.get("/todos?person=matthias").text
+    assert "Mine" in mine and "Nobody&#39;s" not in mine
+    r = client.post("/d/2024-todo-page/todos/0", data={"done": "true"}, headers={"X-Requested-With": "fetch"})
+    assert r.json() == {"done": True}
+    assert "Mine" not in client.get("/todos").text and "Mine" in client.get("/todos?done=1").text
+    assert client.post("/d/2024-todo-page/todos/0", headers={"X-Requested-With": "fetch"}).json() == {"done": False}

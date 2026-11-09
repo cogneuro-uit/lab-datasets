@@ -54,3 +54,16 @@
   </div>
 </div>
 {%- endmacro %}
+
+{# One to-do with a checkbox that saves right away (see app.js). #}
+{% macro todo_item(ds_id, t, i, show_assignee=True) -%}
+<li class="todo {% if t.done %}is-done{% endif %}">
+  <form method="post" action="/d/{{ ds_id }}/todos/{{ i }}" class="todo-form">
+    <label class="todo-label">
+      <input type="checkbox" class="todo-check" name="done" value="true" {% if t.done %}checked{% endif %} data-todo>
+      <span class="todo-text">{{ t.text }}</span>
+    </label>
+  </form>
+  {% if show_assignee and t.assignee %}<span class="todo-who">{{ icon("user") }} {{ cat.person_name(t.assignee) }}</span>{% endif %}
+</li>
+{%- endmacro %}

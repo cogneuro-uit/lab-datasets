@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import icon, status_badge, location_icon, sharing_icon, citation %}
+{% from "_macros.html" import icon, status_badge, location_icon, sharing_icon, citation, todo_item with context %}
 {% block title %}{{ ds.title }}{% endblock %}
 {% block content %}
 <nav class="crumbs"><a href="/">{{ icon("arrow-left") }} All datasets</a></nav>
@@ -51,22 +51,13 @@
 
     {% if ds.todos %}
     {% set done_todos = ds.todos|selectattr("done")|list %}
-    <section class="card todos" id="todos">
+    <section class="card todos {% if ds.open_todos %}has-open{% endif %}" id="todos">
       <h2 class="card-title">{{ icon("circle-check") }} To do
-        {% if ds.open_todos %}<span class="count-pill">{{ ds.open_todos|length }}</span>{% endif %}</h2>
-      {% macro todo_item(t, i) -%}
-      <li class="todo {% if t.done %}is-done{% endif %}">
-        <form method="post" action="/d/{{ ds.id }}/todos/{{ i }}">
-          <input type="hidden" name="done" value="{{ 'false' if t.done else 'true' }}">
-          <button type="submit" class="todo-box" title="{{ 'Reopen' if t.done else 'Mark as done' }}" aria-label="{{ 'Reopen' if t.done else 'Mark as done' }}: {{ t.text }}">{{ icon("check") }}</button>
-        </form>
-        <span class="todo-text">{{ t.text }}</span>
-        {% if t.assignee %}<span class="todo-who small muted">{{ icon("user") }} {{ cat.person_name(t.assignee) }}</span>{% endif %}
-      </li>
-      {%- endmacro %}
+        {% if ds.open_todos %}<span class="todo-count">{{ ds.open_todos|length }} open</span>{% endif %}
+        <a class="card-title-link small" href="/d/{{ ds.id }}/edit#todos">{{ icon("pencil") }} Edit</a></h2>
       {% if ds.open_todos %}
       <ul class="todo-list">
-        {% for t in ds.todos if not t.done %}{{ todo_item(t, ds.todos.index(t)) }}{% endfor %}
+        {% for t in ds.todos %}{% if not t.done %}{{ todo_item(ds.id, t, loop.index0) }}{% endif %}{% endfor %}
       </ul>
       {% else %}
       <p class="muted empty-line">All done.</p>
@@ -75,11 +66,10 @@
       <details class="todo-done">
         <summary class="small muted">{{ done_todos|length }} done</summary>
         <ul class="todo-list">
-          {% for t in ds.todos if t.done %}{{ todo_item(t, ds.todos.index(t)) }}{% endfor %}
+          {% for t in ds.todos %}{% if t.done %}{{ todo_item(ds.id, t, loop.index0) }}{% endif %}{% endfor %}
         </ul>
       </details>
       {% endif %}
-      <p class="small"><a href="/d/{{ ds.id }}/edit#todos">{{ icon("pencil") }} Add or change to-dos</a></p>
     </section>
     {% endif %}
 

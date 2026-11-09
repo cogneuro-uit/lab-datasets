@@ -43,6 +43,33 @@
     window.toast("Copied to clipboard");
   });
 
+  // To-do checkboxes save right away, without leaving the page.
+  document.addEventListener("change", async (e) => {
+    const box = e.target.closest("[data-todo]");
+    if (!box) return;
+    const item = box.closest(".todo");
+    const form = box.form;
+    item.classList.add("is-busy");
+    try {
+      const body = new URLSearchParams(box.checked ? { done: "true" } : {});
+      const r = await fetch(form.action, { method: "POST", body, headers: { "X-Requested-With": "fetch" } });
+      if (!r.ok) throw new Error(r.status);
+      item.classList.toggle("is-done", box.checked);
+      window.toast(box.checked ? "Done. Nice!" : "To-do reopened");
+      const nav = document.querySelector(".nav-count");
+      if (nav) {
+        const n = Math.max(0, parseInt(nav.textContent, 10) + (box.checked ? -1 : 1));
+        nav.textContent = n;
+        nav.hidden = n === 0;
+      }
+    } catch (err) {
+      box.checked = !box.checked;
+      window.toast("Could not save. Please reload the page and try again.");
+    } finally {
+      item.classList.remove("is-busy");
+    }
+  });
+
   // Close open <details class="menu"> when clicking elsewhere.
   document.addEventListener("click", (e) => {
     document.querySelectorAll("details.menu[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; });
