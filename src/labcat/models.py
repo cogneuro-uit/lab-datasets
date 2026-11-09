@@ -156,6 +156,12 @@ class SlackInfo(Model):
     canvases: list[Canvas] = []
 
 
+class Todo(Model):
+    text: Annotated[str, Field(min_length=1)]
+    assignee: OptStr = None  # person id
+    done: bool = False
+
+
 class Outputs(Model):
     publications: list[Publication] = []
     preprints: list[Publication] = []
@@ -177,6 +183,7 @@ class Dataset(Model):
     locations: list[Location] = []
     outputs: Outputs = Outputs()
     notes: OptStr = None
+    todos: list[Todo] = []
 
     @field_validator("contributors", mode="after")
     @classmethod
@@ -189,6 +196,10 @@ class Dataset(Model):
             return int(self.collected.start[:4])
         return int(self.id[:4])
 
+    @property
+    def open_todos(self) -> list[Todo]:
+        return [t for t in self.todos if not t.done]
+
     def to_yaml_data(self) -> dict:
         """Plain data for YAML, without empty values, in schema field order."""
         return _prune(self.model_dump(mode="json"))
@@ -199,7 +210,7 @@ def _prune(v):
         out = {}
         for k, x in v.items():
             x = _prune(x)
-            if x is None or x == [] or x == {} or x == "" or (k == "is_backup" and x is False):
+            if x is None or x == [] or x == {} or x == "" or (k in ("is_backup", "done") and x is False):
                 continue
             out[k] = x
         return out

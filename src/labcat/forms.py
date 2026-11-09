@@ -10,7 +10,7 @@ import re
 from typing import Any
 
 MULTI = {"contributors", "content.modalities", "content.tags", "outputs.related_datasets"}
-BOOL = {"is_backup"}
+BOOL = {"is_backup", "done"}
 URL_RE = re.compile(r"^([a-z][a-z0-9+.-]*://|www\.)", re.I)
 
 
@@ -36,7 +36,7 @@ def _listify(v: Any) -> Any:
 
 def _empty(v: Any) -> bool:
     if isinstance(v, dict):
-        return all(_empty(x) for k, x in v.items() if k not in ("kind", "is_backup"))
+        return all(_empty(x) for k, x in v.items() if k not in ("kind", "is_backup", "done"))
     if isinstance(v, list):
         return all(_empty(x) for x in v)
     return v is None or (isinstance(v, str) and not v.strip())
@@ -77,6 +77,7 @@ def parse_dataset_form(items: list[tuple[str, str]]) -> dict:
     outputs = data.setdefault("outputs", {})
     for key in ("publications", "preprints", "code"):
         outputs[key] = [x for x in outputs.get(key, []) if not _empty(x)]
+    data["todos"] = [x for x in data.get("todos", []) if not _empty(x)]
     return data
 
 

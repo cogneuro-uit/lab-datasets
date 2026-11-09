@@ -176,6 +176,9 @@ class Catalog:
         unknown = [c for c in ds.contributors if c not in ids]
         if unknown:
             errors["contributors"] = "unknown people: " + ", ".join(unknown)
+        for i, t in enumerate(ds.todos):
+            if t.assignee and t.assignee not in ids:
+                errors[f"todos.{i}.assignee"] = f"unknown person '{t.assignee}'"
         mods = {m.id for m in self.modalities}
         bad = [m for m in ds.content.modalities if m not in mods]
         if bad:
@@ -292,6 +295,15 @@ class Catalog:
         data["status"] = status
         verb = "Retire" if status == "retired" else "Reactivate"
         return self.save_dataset(data, author, self.shas.get(dataset_id), message=f"{verb} {dataset_id}")
+
+    def set_todo_done(self, dataset_id: str, index: int, done: bool, author: Person) -> SaveResult:
+        data = self.datasets[dataset_id].to_yaml_data()
+        todos = data.get("todos", [])
+        if not 0 <= index < len(todos):
+            raise StoreError("That to-do no longer exists.")
+        todos[index]["done"] = done
+        verb = "Tick off" if done else "Reopen"
+        return self.save_dataset(data, author, self.shas.get(dataset_id), message=f"{verb} to-do in {dataset_id}")
 
     def restore(self, dataset_id: str, rev: str, author: Person) -> SaveResult:
         text = self.git.show(rev, self.path_of(dataset_id))

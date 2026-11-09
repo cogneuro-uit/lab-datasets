@@ -51,3 +51,18 @@ def test_parse_form():
     ]
     assert d["outputs"]["code"] == []
     assert "_base_sha" not in d
+
+
+def test_parse_form_todos():
+    items = [
+        ("title", "T"), ("todos.0.text", "Backup on Teams"), ("todos.0.assignee", "matthias"),
+        ("todos.2.text", "Upload"), ("todos.2.done", "on"), ("todos.4.text", ""), ("todos.4.assignee", ""),
+    ]
+    d = parse_dataset_form(items)
+    assert d["todos"] == [
+        {"text": "Backup on Teams", "assignee": "matthias"},
+        {"text": "Upload", "done": True},
+    ]
+    ds = Dataset.model_validate({"id": "2020-x", "title": "abc", "contact": "a", "todos": d["todos"]})
+    assert [t.text for t in ds.open_todos] == ["Backup on Teams"]
+    assert ds.to_yaml_data()["todos"] == [{"text": "Backup on Teams", "assignee": "matthias"}, {"text": "Upload", "done": True}]
