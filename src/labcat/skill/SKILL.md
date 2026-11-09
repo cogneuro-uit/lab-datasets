@@ -44,7 +44,8 @@ must be added in the web app (People page) before the file can be imported.
    - **E. Ethics and sharing:** sharing level; REK reference; Sikt reference; what
      participants consented to; a deletion date if the approval sets one.
    - **F. Outputs:** DOIs of publications and preprints; code repositories; related datasets.
-   - **G. Notes:** anything else (known problems, excluded subjects, file formats).
+   - **G. Notes and to-dos:** anything else (known problems, excluded subjects, file formats);
+     things that still need doing (e.g. a missing backup), and who should do them.
 3. **Write the file** as `<id>.yaml`, following the rules below and the field order of
    `reference/example.yaml`.
 4. **Validate:** run `python scripts/validate.py <id>.yaml`. Fix every error and re-run until
@@ -93,6 +94,8 @@ must be added in the web app (People page) before the file can be imported.
   DOI, so a correct DOI alone is enough.
 - `outputs.code`: items with `url` and optional `note`.
 - `outputs.related_datasets`: ids from `reference/datasets.yaml`.
+- `todos`: a list of things that still need doing. Each item has `text`, an optional
+  `assignee` (a person id from `reference/people.yaml`) and `done: true` once finished.
 - Leave a field **out** when it is unknown. Do not write empty strings, `null`, `TBD` or
   placeholders. Unknown fields are not allowed (see the schema).
 

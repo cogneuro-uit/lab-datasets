@@ -46,3 +46,6 @@ outputs:
     - url: https://github.com/example/eeg-attention-analysis
 notes: |
   Subjects 7 and 31 have noisy EEG in block 3.
+todos:
+  - text: Make a backup copy on Teams
+    assignee: matthias

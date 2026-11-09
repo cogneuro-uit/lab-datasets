@@ -144,6 +144,10 @@ class Checker:
                 self.errors.append(f"locations[{i}]: needs a url or a path")
         if locs and not any(isinstance(x, dict) and x.get("is_backup") for x in locs):
             self.warnings.append("locations: no location is marked as backup (is_backup: true)")
+        for i, t in enumerate(d.get("todos") or []):
+            who = t.get("assignee") if isinstance(t, dict) else None
+            if who and who not in self.people:
+                self.errors.append(f"todos[{i}].assignee: unknown person id '{who}'")
         outputs = d.get("outputs") or {}
         for key in ("publications", "preprints"):
             for i, p in enumerate(outputs.get(key) or []):
