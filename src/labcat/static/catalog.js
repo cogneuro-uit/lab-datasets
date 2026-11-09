@@ -93,6 +93,7 @@
         <span class="loc-icons">${locs || `<span class="small">no location yet</span>`}</span>
         ${d.n != null ? `<span>${icon("users")} ${d.n}</span>` : ""}
         ${d.outputs ? `<span>${icon("book-open")} ${d.outputs}</span>` : ""}
+        ${d.todos ? `<span class="todo-badge" title="${d.todos} open to-do${d.todos > 1 ? "s" : ""}">${icon("circle-check")} ${d.todos}</span>` : ""}
         ${meter(d.score)}
       </div></a>`;
   }
@@ -101,7 +102,7 @@
     return `<div class="table-wrap"><table class="ds-table"><thead><tr>
       <th>Title</th><th>Status</th><th>Year</th><th>Contact</th><th>Modalities</th><th>N</th><th>Sharing</th><th>Complete</th>
       </tr></thead><tbody>${rows.map((d) => `<tr data-href="/d/${encodeURIComponent(d.id)}">
-        <td class="t-title"><a href="/d/${encodeURIComponent(d.id)}">${highlight(d.title, terms)}</a><div class="small muted mono">${esc(d.id)}</div></td>
+        <td class="t-title"><a href="/d/${encodeURIComponent(d.id)}">${highlight(d.title, terms)}</a><div class="small muted mono">${esc(d.id)}${d.todos ? ` · <span class="todo-badge">${d.todos} to-do${d.todos > 1 ? "s" : ""}</span>` : ""}</div></td>
         <td>${badge(d.status)}</td><td>${esc(d.year)}</td><td>${esc(d.contactName)}</td>
         <td>${d.modalities.map((m) => esc(meta.modalities[m] || m)).join(", ")}</td>
         <td>${d.n ?? ""}</td><td>${esc(meta.sharing[d.sharing] || "")}</td><td>${meter(d.score)}</td></tr>`).join("")}

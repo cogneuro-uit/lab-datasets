@@ -82,3 +82,20 @@ def test_slack_channel_and_canvases(client, repo):
     assert "https://lab.slack.com/app_redirect?channel=slack-study" in page and "#slack-study" in page
     bad = client.post("/new", data=form | {"_mode": "wizard", "id": "2024-slack-two", "slack.channel": "not a channel"})
     assert bad.status_code == 422 and "use the channel name" in bad.text
+
+
+def test_todos(client, repo):
+    form = {
+        "_mode": "quick", "title": "Todo study", "id": "2024-todo-study", "contact": "matthias",
+        "todos.0.text": "Make a backup copy on Teams", "todos.0.assignee": "matthias",
+    }
+    assert client.post("/new", data=form).status_code == 303
+    page = client.get("/d/2024-todo-study").text
+    assert "Make a backup copy on Teams" in page and 'action="/d/2024-todo-study/todos/0"' in page
+    assert '"todos": 1' in client.get("/").text
+    assert client.post("/d/2024-todo-study/todos/0", data={"done": "true"}).status_code == 303
+    assert "done: true" in (repo / "datasets/2024-todo-study.yaml").read_text()
+    assert '"todos": 0' in client.get("/").text
+    assert client.post("/d/2024-todo-study/todos/5", data={"done": "true"}).status_code == 404
+    bad = client.post("/new", data=form | {"_mode": "wizard", "id": "2024-todo-two", "todos.0.assignee": "ghost"})
+    assert bad.status_code == 422 and "unknown person &#39;ghost&#39;" in bad.text

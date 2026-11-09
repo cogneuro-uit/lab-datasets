@@ -163,6 +163,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "hasBackup": any(loc.is_backup for loc in ds.locations),
             "outputs": len(ds.outputs.publications) + len(ds.outputs.preprints),
             "score": completeness.score(ds),
+            "todos": len(ds.open_todos),
             "updated": last.date if last else None,
         }
 
@@ -225,6 +226,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         cat.set_status(dataset_id, status, current_user())
         msg = "Dataset retired. It is hidden from the catalog but kept, with its history." if status == "retired" else "Dataset is active again."
         return redirect(f"/d/{dataset_id}", msg)
+
+    @app.post("/d/{dataset_id}/todos/{index}")
+    def toggle_todo(dataset_id: str, index: int, done: bool = Form(...)):
+        if not 0 <= index < len(get_ds(dataset_id).todos):
+            raise HTTPException(404)
+        cat.set_todo_done(dataset_id, index, done, current_user())
+        return redirect(f"/d/{dataset_id}#todos", "To-do ticked off." if done else "To-do reopened.")
 
     # --- editing ---------------------------------------------------------
     def form_page(request, mode, values, errors=None, message=None, base_sha=None, status_code=200, ds=None):

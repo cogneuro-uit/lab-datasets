@@ -370,6 +370,24 @@ table.ds-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .loc-note { font-size: 0.86rem; color: var(--text-2); }
 .loc-target { font-size: 0.78rem; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loc-actions { display: flex; gap: 6px; }
+
+.todo-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.todo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.todo form { display: contents; }
+.todo-box { display: grid; place-items: center; width: 22px; height: 22px; flex: none; padding: 0; cursor: pointer;
+            border: 2px solid var(--border-strong); border-radius: 6px; background: transparent; color: transparent; }
+.todo-box .icon { width: 14px; height: 14px; }
+.todo-box:hover { border-color: var(--ok); color: var(--ok); }
+.todo.is-done .todo-box { background: var(--ok); border-color: var(--ok); color: #fff; }
+.todo-text { flex: 1; min-width: 12ch; }
+.todo.is-done .todo-text { text-decoration: line-through; color: var(--text-3); }
+.todo-who { display: inline-flex; align-items: center; gap: 4px; }
+.todo-done { margin-top: 10px; }
+.todo-done summary { cursor: pointer; }
+.todo-done .todo-list { margin-top: 8px; }
+.todos > p.small { margin: 12px 0 0; }
+.todos .card-title .count-pill { background: var(--warn); }
+.todo-badge { display: inline-flex; align-items: center; gap: 4px; color: var(--warn); font-weight: 600; }
 @media (max-width: 600px) {
   .location { grid-template-columns: auto 1fr; }
   .loc-actions { grid-column: 1 / -1; }

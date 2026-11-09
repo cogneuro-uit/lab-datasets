@@ -93,6 +93,28 @@
 </div>
 {%- endmacro %}
 
+{% macro todo_row(i, t) -%}
+<div class="repeat-row todo-row" data-row>
+  <div class="row-grid">
+    <label class="mini-field grow"><span class="label">What needs doing?</span>
+      <input type="text" name="todos.{{ i }}.text" value="{{ get(t, 'text', '') }}" placeholder="e.g. Make a backup copy on Teams"></label>
+    <label class="mini-field"><span class="label">Who? <span class="muted">(optional)</span></span>
+      <select name="todos.{{ i }}.assignee">
+        <option value="">Nobody yet</option>
+        {% for p in cat.people|sort(attribute="name") if p.active or p.id == get(t, "assignee") %}
+        <option value="{{ p.id }}" {% if get(t, "assignee") == p.id %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select></label>
+    <label class="check-inline">
+      <input type="checkbox" name="todos.{{ i }}.done" {% if get(t, "done") %}checked{% endif %}>
+      <span>{{ icon("check") }} Done</span>
+    </label>
+  </div>
+  {{ row_errors("todos." ~ i ~ ".") }}
+  <button type="button" class="row-remove icon-btn" data-remove-row aria-label="Remove this to-do" title="Remove">{{ icon("trash-2") }}</button>
+</div>
+{%- endmacro %}
+
 {% macro repeater(name, rows, add_label, row_macro, group=None) -%}
 <div class="repeater" data-repeater="{{ name }}">
   <div class="repeat-rows" data-rows>

@@ -12,7 +12,7 @@
   ("locations", "Where it's stored", "hard-drive", "Where can the data and its backups be found?"),
   ("legal", "Ethics & sharing", "scale", "Approvals, consent and who may get the data."),
   ("outputs", "Papers & code", "book-open", "Publications, preprints and code that belong to it."),
-  ("notes", "Notes", "sticky-note", "Anything else worth knowing."),
+  ("notes", "Notes & to-dos", "sticky-note", "Anything else worth knowing, and what still needs doing."),
 ] if mode != "quick" else [("basics", "Basics", "file-text", "")] %}
 
 <nav class="crumbs">
@@ -244,10 +244,15 @@
 
     {# ---------------- 7. Notes ---------------- #}
     <section class="step card" id="notes" data-step="6">
-      <header class="step-head"><h2>{{ icon("sticky-note") }} Notes</h2><p>{{ steps[6][3] }}</p></header>
+      <header class="step-head"><h2>{{ icon("sticky-note") }} Notes &amp; to-dos</h2><p>{{ steps[6][3] }}</p></header>
       {% call field("notes", "Notes", errors, hint="Free text, e.g. known problems, which subjects to exclude, file formats. Markdown allowed.") %}
       <textarea id="f-notes" name="notes" rows="6">{{ v.notes or '' }}</textarea>
       {% endcall %}
+      <div class="field" id="todos">
+        <span class="label">To-dos</span>
+        {{ rows.repeater("todos", get(v, 'todos', []), "Add a to-do", rows.todo_row) }}
+        <p class="hint">Things that still need doing, e.g. a missing backup or an upload to OpenNeuro. Tick <em>Done</em> when finished; it stays in the history.</p>
+      </div>
       {% if mode == "wizard" %}
       <div class="review" data-review>
         <h3 class="sub">{{ icon("circle-check") }} Overview</h3>
