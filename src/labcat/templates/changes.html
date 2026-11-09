@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import icon %}
+{% from "_macros.html" import icon, feed_item with context %}
 {% block title %}Recent changes{% endblock %}
 {% block content %}
 <div class="form-head">
@@ -11,21 +11,7 @@
 {% for c, ids in commits %}
   {% set day = c.date[:10] %}
   {% if day != ns.day %}{% set ns.day = day %}<h2 class="day">{{ (c.date|date).split(",")[0] }}</h2>{% endif %}
-  <div class="feed-item">
-    <span class="avatar avatar-sm">{{ c.author_name.split()|map("first")|join("")|upper }}</span>
-    <div class="feed-body">
-      <div><strong>{{ c.author_name }}</strong>
-        {% set subj = c.subject %}
-        {% if ids and ids[0] in cat.datasets %}
-          {{ subj.split(" ")[0]|lower }} <a href="/d/{{ ids[0] }}">{{ cat.datasets[ids[0]].title }}</a>
-          {% if ":" in subj and not subj.startswith("Add ") %}<span class="muted">· {{ subj.split(":", 1)[1] }}</span>{% endif %}
-        {% else %}
-          <span>{{ subj }}</span>
-        {% endif %}
-      </div>
-      <div class="small muted">{{ c.date|ago }}{% if ids %} · <a href="/d/{{ ids[0] }}/history">history</a>{% endif %}</div>
-    </div>
-  </div>
+  {{ feed_item(c, ids) }}
 {% else %}
   <p class="muted">No changes yet.</p>
 {% endfor %}

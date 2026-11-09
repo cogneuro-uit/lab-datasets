@@ -41,22 +41,22 @@
         <button class="icon-btn" type="button" id="theme-toggle" title="Switch light / dark theme" aria-label="Switch light / dark theme">
           <span class="when-light">{{ icon("moon") }}</span><span class="when-dark">{{ icon("sun") }}</span>
         </button>
-        {% set initials = user.name.split()|map("first")|join("")|upper %}
+        {% set user_initials = user.name.split()|map("first")|join("")|upper %}
         {% if auth_enabled %}
         <details class="menu user-menu">
           <summary class="avatar-btn" aria-label="Account: {{ user.name }}" title="Signed in as {{ user.name }}">
             {% if user_picture %}<img class="avatar avatar-img" src="{{ user_picture }}" alt="" width="32" height="32" referrerpolicy="no-referrer">
-            {% else %}<span class="avatar">{{ initials }}</span>{% endif %}
+            {% else %}<span class="avatar">{{ user_initials }}</span>{% endif %}
           </summary>
           <div class="menu-pop">
             <div class="menu-who"><strong>{{ user.name }}</strong><span class="small muted mono">{{ user.id }}</span></div>
-            <a href="/todos?person={{ user.id }}">{{ icon("circle-check") }} My to-dos</a>
-            <a href="/?person={{ user.id }}">{{ icon("database") }} My datasets</a>
+            <a href="/people/{{ user.id }}">{{ icon("user") }} My profile</a>
+            <a href="/people/{{ user.id }}#todos">{{ icon("circle-check") }} My to-dos</a>
             <form method="post" action="/logout"><button type="submit">{{ icon("arrow-right") }} Sign out</button></form>
           </div>
         </details>
         {% else %}
-        <span class="avatar" title="Signed in as {{ user.name }} (development mode: no Slack login configured)">{{ initials }}</span>
+        <a class="avatar" href="/people/{{ user.id }}" title="Signed in as {{ user.name }} (development mode: no Slack login configured)">{{ user_initials }}</a>
         {% endif %}
       </div>
       {% endif %}

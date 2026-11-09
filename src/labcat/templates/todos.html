@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import icon, status_badge, todo_item with context %}
+{% from "_macros.html" import icon, status_badge, todo_item, person_link with context %}
 {% block title %}To-dos{% endblock %}
 {% block content %}
 <div class="form-head">
@@ -28,7 +28,7 @@
       <a href="/d/{{ ds.id }}#todos">{{ ds.title }}</a>
       {{ status_badge(ds.status) }}
     </h2>
-    <p class="small muted todo-group-meta"><span class="mono">{{ ds.id }}</span> · Contact: {{ cat.person_name(ds.contact) }}</p>
+    <p class="small muted todo-group-meta"><span class="mono">{{ ds.id }}</span> · Contact: {{ person_link(ds.contact) }}</p>
     <ul class="todo-list">
       {% for i, t in items %}{{ todo_item(ds.id, t, i) }}{% endfor %}
     </ul>

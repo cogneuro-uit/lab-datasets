@@ -64,6 +64,33 @@
       <span class="todo-text">{{ t.text }}</span>
     </label>
   </form>
-  {% if show_assignee and t.assignee %}<span class="todo-who">{{ icon("user") }} {{ cat.person_name(t.assignee) }}</span>{% endif %}
+  {% if show_assignee and t.assignee %}<span class="todo-who">{{ icon("user") }} {{ person_link(t.assignee) }}</span>{% endif %}
 </li>
+{%- endmacro %}
+
+{# A person's name linking to their profile. #}
+{% macro person_link(pid, cls="") -%}
+{% if cat.person(pid) %}<a class="person-link {{ cls }}" href="/people/{{ pid }}">{{ cat.person_name(pid) }}</a>{% else %}{{ pid }}{% endif %}
+{%- endmacro %}
+
+{% macro initials(name) -%}{{ name.split()|map("first")|join("")|upper }}{%- endmacro %}
+
+{# One commit in a "recent changes" list. #}
+{% macro feed_item(c, ids, show_author=True) -%}
+<div class="feed-item">
+  {% if show_author %}<span class="avatar avatar-sm">{{ initials(c.author_name) }}</span>{% endif %}
+  <div class="feed-body">
+    {% set author = cat.author_of(c) %}
+    <div>{% if show_author %}<strong>{% if author %}{{ person_link(author.id) }}{% else %}{{ c.author_name }}{% endif %}</strong> {% endif %}
+      {% set subj = c.subject %}
+      {% if ids and ids[0] in cat.datasets %}
+        {{ subj.split(" ")[0]|lower if show_author else subj.split(" ")[0] }} <a href="/d/{{ ids[0] }}">{{ cat.datasets[ids[0]].title }}</a>
+        {% if ":" in subj and not subj.startswith("Add ") %}<span class="muted">· {{ subj.split(":", 1)[1] }}</span>{% endif %}
+      {% else %}
+        <span>{{ subj }}</span>
+      {% endif %}
+    </div>
+    <div class="small muted">{{ c.date|ago }}{% if ids %} · <a href="/d/{{ ids[0] }}/history">history</a>{% endif %}</div>
+  </div>
+</div>
 {%- endmacro %}

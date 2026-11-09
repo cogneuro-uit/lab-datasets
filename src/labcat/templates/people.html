@@ -13,7 +13,7 @@
       <li>
         <span class="avatar">{{ p.name.split()|map("first")|join("")|upper }}</span>
         <div>
-          <strong>{{ p.name }}</strong>{% if not p.active %} <span class="pill">alumni</span>{% endif %}
+          <strong><a class="person-link" href="/people/{{ p.id }}">{{ p.name }}</a></strong>{% if not p.active %} <span class="pill">alumni</span>{% endif %}
           <div class="small muted"><span class="mono">{{ p.id }}</span>{% if p.email %} · {{ p.email }}{% endif %}</div>
         </div>
         <span class="spacer"></span>

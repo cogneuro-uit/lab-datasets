@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import icon, status_badge, location_icon, sharing_icon, citation, todo_item with context %}
+{% from "_macros.html" import icon, status_badge, location_icon, sharing_icon, citation, todo_item, person_link with context %}
 {% block title %}{{ ds.title }}{% endblock %}
 {% block content %}
 <nav class="crumbs"><a href="/">{{ icon("arrow-left") }} All datasets</a></nav>
@@ -20,7 +20,7 @@
     </div>
     <h1>{{ ds.title }}</h1>
     <p class="ds-byline">
-      {{ icon("user") }} Contact: <strong>{{ cat.person_name(ds.contact) }}</strong>
+      {{ icon("user") }} Contact: <strong>{{ person_link(ds.contact) }}</strong>
       {% if ds.collected.start %}<span class="sep">·</span>{{ icon("calendar") }} {{ ds.collected.start }}{% if ds.collected.end %} – {{ ds.collected.end }}{% endif %}{% endif %}
       {% if last %}<span class="sep">·</span>{{ icon("clock") }} Updated {{ last.date|ago }} by {{ last.author_name }}{% endif %}
     </p>
@@ -178,9 +178,9 @@
         {% endif %}
         <dt>People</dt>
         <dd>
-          <span class="person"><span class="avatar avatar-sm">{{ cat.person_name(ds.contact).split()|map("first")|join("")|upper }}</span>{{ cat.person_name(ds.contact) }} <span class="muted small">(contact)</span></span>
+          <span class="person"><span class="avatar avatar-sm">{{ cat.person_name(ds.contact).split()|map("first")|join("")|upper }}</span>{{ person_link(ds.contact) }} <span class="muted small">(contact)</span></span>
           {% for p in ds.contributors if p != ds.contact %}
-          <span class="person"><span class="avatar avatar-sm">{{ cat.person_name(p).split()|map("first")|join("")|upper }}</span>{{ cat.person_name(p) }}</span>
+          <span class="person"><span class="avatar avatar-sm">{{ cat.person_name(p).split()|map("first")|join("")|upper }}</span>{{ person_link(p) }}</span>
           {% endfor %}
         </dd>
       </dl>
