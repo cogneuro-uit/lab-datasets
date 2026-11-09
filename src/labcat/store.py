@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
 import logging
@@ -104,6 +105,7 @@ class Catalog:
         self.git = git
         self.lock = threading.RLock()
         self.sync_error: str | None = None  # last problem talking to the remote, shown in the UI
+        self.last_sync: str | None = None  # ISO time of the last successful pull
         self.datasets: dict[str, Dataset] = {}
         self.shas: dict[str, str] = {}
         self.broken: dict[str, str] = {}  # file name -> problem
@@ -238,8 +240,10 @@ class Catalog:
     def sync(self) -> None:
         """Pull changes from the remote and push anything still waiting (runs every minute)."""
         with self.lock:
-            if self._sync_step(self.git.pull) and self.git.unpushed():
-                self._sync_step(self.git.push)
+            if self._sync_step(self.git.pull):
+                self.last_sync = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+                if self.git.unpushed():
+                    self._sync_step(self.git.push)
             self.refresh()
 
     def _sync_step(self, step) -> bool:

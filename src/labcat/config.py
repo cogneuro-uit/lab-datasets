@@ -10,6 +10,8 @@ LABCAT_SLACK_TEAM_ID        only members of this workspace may sign in (e.g. T01
 LABCAT_SECRET_KEY           signs the login cookie; set it so logins survive restarts
 LABCAT_BASE_URL             public address, e.g. https://datasets.lab.uit.no (default: taken
                             from the request)
+LABCAT_ADMINS               person ids with access to the admin page, comma-separated (e.g. matthias)
+LABCAT_PULL_INTERVAL        seconds between automatic syncs with GitHub (default: 600; 0 = off)
 """
 
 from __future__ import annotations
@@ -25,12 +27,13 @@ class Settings:
     user: str
     committer_name: str = "Lab catalog"
     committer_email: str = "catalog@lab.local"
-    pull_interval: int = 60  # seconds; only used when the data repo has a remote
+    pull_interval: int = 600  # seconds; only used when the data repo has a remote; 0 = off
     slack_client_id: str | None = None
     slack_client_secret: str | None = None
     slack_team_id: str | None = None
     secret_key: str | None = None
     base_url: str | None = None
+    admins: tuple[str, ...] = ()
 
     @property
     def auth_enabled(self) -> bool:
@@ -65,4 +68,6 @@ def load_settings() -> Settings:
         slack_team_id=get("LABCAT_SLACK_TEAM_ID"),
         secret_key=get("LABCAT_SECRET_KEY"),
         base_url=get("LABCAT_BASE_URL"),
+        admins=tuple(x.strip() for x in (get("LABCAT_ADMINS") or "").split(",") if x.strip()),
+        pull_interval=int(get("LABCAT_PULL_INTERVAL") or 600),
     )
