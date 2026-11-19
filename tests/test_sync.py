@@ -13,7 +13,7 @@ def git(cwd, *args):
 @pytest.fixture
 def remote(cat, repo, tmp_path):
     bare = tmp_path / "remote.git"
-    git(tmp_path, "init", "--bare", "-q", str(bare))
+    git(tmp_path, "init", "--bare", "-q", "-b", "main", str(bare))
     git(repo, "remote", "add", "origin", str(bare))
     git(repo, "push", "-q", "-u", "origin", "HEAD")
     return bare
