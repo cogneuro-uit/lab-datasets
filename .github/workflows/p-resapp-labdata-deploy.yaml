@@ -39,13 +39,13 @@ jobs:
             --target "$RUNNER_TEMP/package" "$RUNNER_TEMP"/wheels/*.whl
           cd "$RUNNER_TEMP/package"
           uv run --no-project --python 3.12 python -c "from labcat.web import app_factory"
-          zip -qr "$RUNNER_TEMP/labcat.zip" .
+          zip -qr "$RUNNER_TEMP/labcat-webapp.zip" .
 
       - name: Upload deployment ZIP
         uses: actions/upload-artifact@v4
         with:
           name: labcat
-          path: ${{ runner.temp }}/labcat.zip
+          path: ${{ runner.temp }}/labcat-webapp.zip
           if-no-files-found: error
 
   deploy:
@@ -71,5 +71,5 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: p-resapp-labdata
-          package: labcat.zip
+          app-name: p-resapp-labdata-webapp
+          package: ${{ runner.temp }}/labcat-webapp.zip
