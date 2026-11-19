@@ -50,6 +50,29 @@ def test_import(client):
     assert r.status_code == 303 and r.headers["location"] == "/d/2019-imported"
 
 
+def test_import_rejects_non_web_link(client, repo):
+    yaml = (
+        "id: 2019-invalid-link\ntitle: Imported one\ncontact: matthias\n"
+        "outputs:\n  preprints:\n    - url: 'data:text/plain,example'\n"
+    )
+    r = client.post("/new/import", data={"yaml": yaml})
+    assert r.status_code == 422
+    assert "outputs.preprints.0.url" in r.text
+    assert not (repo / "datasets/2019-invalid-link.yaml").exists()
+
+
+def test_location_paths_render_as_text_not_links(client):
+    target = "smb://storage.example.com/archive"
+    r = client.post("/new", data={
+        "title": "Storage test", "id": "2021-storage-test", "contact": "matthias",
+        "locations.0.target": target,
+    })
+    assert r.status_code == 303
+    page = client.get(r.headers["location"]).text
+    assert f'data-copy="{target}"' in page
+    assert f'href="{target}"' not in page
+
+
 def test_people_json_and_suggest_id(client):
     r = client.post("/people", data={"name": "Jane Doe", "email": ""}, headers={"Accept": "application/json"})
     assert r.json() == {"id": "janedoe", "name": "Jane Doe"}

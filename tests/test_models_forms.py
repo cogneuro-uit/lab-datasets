@@ -2,7 +2,21 @@ import pytest
 from pydantic import ValidationError
 
 from labcat.forms import parse_dataset_form
-from labcat.models import Dataset
+from labcat.models import CodeRepo, Dataset, Location, Publication
+
+
+@pytest.mark.parametrize("model", [Location, Publication, CodeRepo])
+def test_link_fields_allow_only_web_schemes(model):
+    for url in (" ftp://example.com/archive ", "data:text/plain,example", "//example.com"):
+        with pytest.raises(ValidationError, match="url"):
+            model(url=url)
+    for url in ("http://example.com", "HTTPS://example.com"):
+        assert model(url=f" {url} ").url == url
+
+
+@pytest.mark.parametrize("model", [Location, Publication])
+def test_optional_links_accept_whitespace_as_blank(model):
+    assert model(url="   ").url is None
 
 
 def test_doi_is_normalized():
@@ -66,3 +80,14 @@ def test_parse_form_todos():
     ds = Dataset.model_validate({"id": "2020-x", "title": "abc", "contact": "a", "todos": d["todos"]})
     assert [t.text for t in ds.open_todos] == ["Backup on Teams"]
     assert ds.to_yaml_data()["todos"] == [{"text": "Backup on Teams", "assignee": "matthias"}, {"text": "Upload", "done": True}]
+
+
+def test_location_form_distinguishes_web_links_from_copyable_paths():
+    data = parse_dataset_form([
+        ("locations.0.target", "www.example.com/archive"),
+        ("locations.1.target", "smb://storage.example.com/archive"),
+    ])
+    assert data["locations"] == [
+        {"url": "https://www.example.com/archive"},
+        {"path": "smb://storage.example.com/archive"},
+    ]

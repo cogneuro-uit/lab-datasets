@@ -9,9 +9,11 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from .models import WEB_URL_PATTERN
+
 MULTI = {"contributors", "content.modalities", "content.tags", "outputs.related_datasets"}
 BOOL = {"is_backup", "done"}
-URL_RE = re.compile(r"^([a-z][a-z0-9+.-]*://|www\.)", re.I)
+URL_RE = re.compile(WEB_URL_PATTERN)
 
 
 def _set(root: dict, parts: list[str], value: Any) -> None:
@@ -69,6 +71,8 @@ def parse_dataset_form(items: list[tuple[str, str]]) -> dict:
             continue
         target = (loc.pop("target", "") or "").strip()
         if target:
+            if target.lower().startswith("www."):
+                target = f"https://{target}"
             loc["url" if URL_RE.match(target) else "path"] = target
         locs.append(loc)
     data["locations"] = locs

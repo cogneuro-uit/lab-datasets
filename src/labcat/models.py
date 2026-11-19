@@ -13,6 +13,7 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_valida
 
 ID_PATTERN = r"^\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*$"
 PERSON_ID_PATTERN = r"^[a-z][a-z0-9_-]*$"
+WEB_URL_PATTERN = r"^[Hh][Tt][Tt][Pp][Ss]?://"
 
 Status = Literal["planned", "collecting", "analysing", "published", "archived", "retired"]
 Sharing = Literal["open", "on-request", "internal", "restricted"]
@@ -92,6 +93,8 @@ def _slack_channel(v):
 
 
 OptStr = Annotated[str | None, BeforeValidator(_blank_to_none)]
+WebUrl = Annotated[str, Field(pattern=WEB_URL_PATTERN)]
+OptWebUrl = Annotated[WebUrl | None, BeforeValidator(_blank_to_none)]
 PartialDate = Annotated[str | None, BeforeValidator(_partial_date)]
 Doi = Annotated[str | None, BeforeValidator(_normalize_doi)]
 
@@ -123,7 +126,7 @@ class Legal(Model):
 
 class Location(Model):
     kind: LocationKind = "other"
-    url: OptStr = None
+    url: OptWebUrl = None
     path: OptStr = None
     note: OptStr = None
     is_backup: bool = False
@@ -138,11 +141,11 @@ class Publication(Model):
     authors: OptStr = None
     venue: OptStr = None
     year: Annotated[int | None, BeforeValidator(_blank_to_none)] = None
-    url: OptStr = None
+    url: OptWebUrl = None
 
 
 class CodeRepo(Model):
-    url: str
+    url: WebUrl
     note: OptStr = None
 
 
