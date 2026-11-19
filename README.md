@@ -53,6 +53,36 @@ by email; someone signing in for the first time is added automatically.
 
 To keep it running in the background, see [deploy/labcat.service](deploy/labcat.service).
 
+## Deploy to Azure App Service
+
+The [GitHub Actions workflow](.github/workflows/p-resapp-labdata-deploy.yaml) tests
+the app with `uv`, builds a ZIP with its locked runtime dependencies, and deploys
+it to the production slot of `p-resapp-labdata` on pushes to `main`. You can also
+run it manually from `main` in the Actions tab.
+
+Before the first deployment:
+
+1. Configure Azure OIDC federation for the repository's `main` branch
+   (`repo:uit-no/lab-datasets:ref:refs/heads/main`). Grant the federated identity
+   deployment access to the production Web App and set these GitHub Actions
+   secrets: `P_RESAPP_DEPLOYMENT_ID_CLIENTID`, `P_RESAPP_DEPLOYMENT_ID_TENANTID`,
+   and `P_RESAPP_DEPLOYMENT_ID_SUBSCRIPTIONID`.
+2. Set the Web App's stack to **Python 3.12 on Linux**. Set
+   `SCM_DO_BUILD_DURING_DEPLOYMENT=false` because the runner builds the ZIP, and
+   leave `WEBSITE_RUN_FROM_PACKAGE` unset. Set the startup command to:
+   ```sh
+   python -m uvicorn labcat.web:app_factory --factory --host 0.0.0.0 --port 8000
+   ```
+3. Clone the catalog data repository into a persistent path outside the
+   deployment directory, such as `/home/labcat-data`, and set `LABCAT_DATA` to
+   that path in App Service. The app won't start without the Git checkout.
+   Configure Git credentials on the Web App for catalog sync; the workflow's
+   Azure credentials are only for deployment.
+4. Before exposing the app publicly, set the Slack credentials, workspace ID,
+   session secret, and HTTPS `LABCAT_BASE_URL` in App Service. Without the Slack
+   credentials, the app permits edits without signing in. Register
+   `<LABCAT_BASE_URL>/auth/callback` in the Slack app.
+
 ## Adding datasets
 
 - **Step by step:** a wizard with seven short steps; only the first is required.
